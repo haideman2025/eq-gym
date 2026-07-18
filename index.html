@@ -96,6 +96,7 @@ const SEAS={
 };
 const RANKS=[[0,'Người Mới Nhập Môn'],[3,'Hội Viên Đồng'],[7,'Hội Viên Bạc'],[12,'Hội Viên Vàng'],[18,'Vận Động Viên EQ'],[24,'Coach Tập Sự'],[30,'Bậc Thầy EQ']];
 const B_LESSON=10000000, B_PRACTICE=5000000, B_SCORE=100000;
+const COMICS={0:15,1:15,2:15,3:12,4:15,5:15,6:15,7:15,9:15,10:15,11:15,12:15};
 const TRACKS=[
   {f:'music/omma-flow.mp3',name:'OMMA Flow'},
   {f:'music/omma-flow-1.mp3',name:'OMMA Flow 1'},
@@ -199,6 +200,7 @@ function toggleSfx(){ snd.sfx=!snd.sfx; saveSnd(); sfx('tap'); render(); }
 let STEPS=null;
 function buildSteps(n){
   const l=LESSONS[n], steps=[{kind:'intro'}];
+  if(COMICS[n]) steps.push({kind:'comic', pages:COMICS[n]});
   const isHead=it=> it.k==='h' || (it.t && it.t.length<64 && it.t===it.t.toUpperCase() && /[A-ZÀ-Ỹ]/.test(it.t));
   l.sections.forEach(sec=>{ if(sec.practice) return; let page=[]; const flush=()=>{ if(page.length){ steps.push({kind:'content',h:sec.h,items:page}); page=[]; } };
     sec.items.forEach(it=>{ if(isHead(it)&&page.length) flush(); page.push({t:(it.t||'').replace(/=>/g,'→'), isHead:isHead(it), isFlow:!isHead(it)&&/→|⇒/.test(it.t||'')}); if(page.length>=STEP_LINES) flush(); }); flush(); });
@@ -218,6 +220,9 @@ function openLesson(n){
 }
 function goHome(){ UI.view='home'; render(); window.scrollTo(0,0); }
 function goStep(d){ sfx('pop'); UI.step=Math.max(0,Math.min(STEPS.length-1,UI.step+d)); render(); window.scrollTo(0,0); }
+function stepIdx(kind){ return STEPS.findIndex(s=>s.kind===kind); }
+function jumpStep(idx){ if(idx<0||idx>=STEPS.length) return; sfx('tap'); UI.step=idx; render(); window.scrollTo(0,0); }
+function scrollToVid(){ sfx('tap'); const e=document.getElementById('introvid'); if(e) e.scrollIntoView({behavior:'smooth',block:'center'}); }
 function nav(v){ sfx('tap'); UI.view=v; if(v==='quiz') render(); else render(); if(v!=='chat') window.scrollTo(0,0); else scrollChatDown(); }
 
 function complete(n){
@@ -607,7 +612,7 @@ function viewHome(){
       items.forEach(l=>{ const done=isDone(l.n), lock=!unlocked(l.n), now=l.n===nextN; const v=VIDEO_MAP[l.n]&&(VIDEO_MAP[l.n].yt||VIDEO_MAP[l.n].mp4); const scr=S.scores[l.n];
         h+=`<div onclick="openLesson(${l.n})" style="display:flex;gap:12px;align-items:center;background:#fff;border-radius:15px;padding:9px 12px;min-height:56px;cursor:pointer;position:relative;z-index:2;border:1px solid ${now?'#E85B5B55':'#E3E8EE'};opacity:${lock?.55:1};animation:${now?'pulse 1.8s infinite':'none'}">
           <div style="width:44px;height:44px;flex:0 0 44px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${done?'#0FB89B':'#fff'};border:3px solid ${now?'#E85B5B':(done?'#0FB89B':(lock?'#E3E8EE':M.color))};position:relative"><span style="font-family:'Space Grotesk';font-size:14px;font-weight:700;color:${done?'#fff':(lock?'#B4BFC9':'#0F1923')}">${done?'✓':String(l.n)}</span>${now?'<span style="position:absolute;width:10px;height:10px;border-radius:50%;background:#E85B5B;bottom:-2px;right:-2px;border:2px solid #fff"></span>':''}</div>
-          <div style="flex:1;min-width:0"><b style="font-size:12.5px;display:block;line-height:1.35;color:#0F1923">${esc(l.title)}</b><span style="font-size:10.5px;color:#5C6B7A;display:flex;align-items:center;gap:7px;margin-top:3px;flex-wrap:wrap;font-weight:600">${v?'<span style="font-size:9px;padding:2px 7px;border-radius:6px;background:#FDEEEE;color:#C74848;border:1px solid #F5CFCF;white-space:nowrap;font-weight:800">▶ VIDEO</span>':''}<span style="font-size:9px;padding:2px 7px;border-radius:6px;background:#EAF3FE;color:#2F6FBF;border:1px solid #CCE1F8;white-space:nowrap;font-weight:800">✍ THỰC HÀNH</span>${scr?'<span style="font-size:9px;padding:2px 7px;border-radius:6px;background:#FFF7EC;color:#B27607;border:1px solid #F2D9A8;white-space:nowrap;font-weight:800">★ '+scr.score+'</span>':''}<span style="white-space:nowrap">${esc(l.duration||'5–7 phút')}</span></span></div>
+          <div style="flex:1;min-width:0"><b style="font-size:12.5px;display:block;line-height:1.35;color:#0F1923">${esc(l.title)}</b><span style="font-size:10.5px;color:#5C6B7A;display:flex;align-items:center;gap:7px;margin-top:3px;flex-wrap:wrap;font-weight:600">${v?'<span style="font-size:9px;padding:2px 7px;border-radius:6px;background:#FDEEEE;color:#C74848;border:1px solid #F5CFCF;white-space:nowrap;font-weight:800">▶ VIDEO</span>':''}${COMICS[l.n]?'<span style="font-size:9px;padding:2px 7px;border-radius:6px;background:#FFF7EC;color:#B27607;border:1px solid #F2D9A8;white-space:nowrap;font-weight:800">◫ TRUYỆN</span>':''}<span style="font-size:9px;padding:2px 7px;border-radius:6px;background:#EAF3FE;color:#2F6FBF;border:1px solid #CCE1F8;white-space:nowrap;font-weight:800">✍ THỰC HÀNH</span>${scr?'<span style="font-size:9px;padding:2px 7px;border-radius:6px;background:#FFF7EC;color:#B27607;border:1px solid #F2D9A8;white-space:nowrap;font-weight:800">★ '+scr.score+'</span>':''}<span style="white-space:nowrap">${esc(l.duration||'5–7 phút')}</span></span></div>
           <span style="font-size:13px;flex:0 0 auto;color:${done?'#0FB89B':(lock?'#B4BFC9':'#5C6B7A')};font-weight:800">${done?'✓':(lock?'🔒':'›')}</span></div>`; });
       h+=`</div>`; }
     h+=`</div>`;
@@ -636,6 +641,7 @@ function viewLesson(){
     </div></div>
     <div style="padding:18px 18px 26px;animation:fade .22s ease">`;
   if(step.kind==='intro') h+=lessonIntro(n,l,M);
+  else if(step.kind==='comic') h+=lessonComic(n,step);
   else if(step.kind==='content') h+=lessonContent(step,M);
   else if(step.kind==='practice') h+=lessonPractice(n,step);
   else if(step.kind==='finish') h+=lessonFinish(n,done);
@@ -651,12 +657,28 @@ function lessonIntro(n,l,M){
     <span style="background:#fff;border:1px solid #E3E8EE;border-radius:999px;padding:6px 12px;font-size:11.5px;white-space:nowrap;font-weight:700;color:#5C6B7A">${esc(l.duration||'5–7 phút')}</span>
     <span style="background:#EAFBF6;border:1px solid #B6EDDF;border-radius:999px;padding:6px 12px;font-size:11.5px;white-space:nowrap;font-weight:700;color:#0A6E5D">+${fmt(B_LESSON)} EP</span>
     <span style="background:#fff;border:1px solid #E3E8EE;border-radius:999px;padding:6px 12px;font-size:11.5px;white-space:nowrap;font-weight:700;color:#5C6B7A">${STEPS.length} bước</span></div>`;
-  if(id) h+=`<div style="margin:16px 0 0;border-radius:16px;overflow:hidden;border:1px solid #E3E8EE;background:#000"><iframe src="https://www.youtube-nocookie.com/embed/${id}" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy" style="width:100%;aspect-ratio:16/9;display:block;border:0;background:#000"></iframe></div>`;
-  else if(v.mp4 && UI.mp4Ok!==false) h+=`<div style="margin:16px 0 0;border-radius:16px;overflow:hidden;border:1px solid #E3E8EE;background:#000"><video controls preload="metadata" playsinline src="${esc(v.mp4)}" style="width:100%;aspect-ratio:16/9;display:block;background:#000"></video></div>`;
-  else h+=`<div style="margin:16px 0 0;border-radius:16px;border:1px solid #E3E8EE;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:linear-gradient(150deg,#0F1923,#123A34);color:#7FA39B"><svg width="40" height="40" viewBox="0 0 100 100"><circle cx="50" cy="50" r="34" fill="none" stroke="#0FB89B" stroke-width="10"/><path d="M42 35 L64 50 L42 65 Z" fill="#fff"/></svg><b style="color:#fff;font-size:13.5px">Video bài học đang cập nhật</b><span style="font-size:11.5px">Đọc nội dung theo từng bước bên dưới nhé!</span></div>`;
+  h+=`<div style="background:#fff;border:1px solid #E3E8EE;border-radius:16px;padding:13px 14px;margin:16px 0 0">
+    <div style="font-family:'Space Grotesk';font-size:11px;font-weight:700;color:#0A6E5D;margin-bottom:10px;letter-spacing:2px">HỌC THEO CÁCH CỦA BẠN</div>
+    <div style="display:flex;gap:8px">
+      <button onclick="scrollToVid()" style="flex:1;background:#EAFBF6;border:1px solid #B6EDDF;border-radius:12px;padding:12px 6px;cursor:pointer;color:#0A6E5D;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-weight:800"><span style="font-size:19px">▶</span><span style="font-size:11px">Xem video</span></button>
+      ${COMICS[n]?`<button onclick="jumpStep(stepIdx('comic'))" style="flex:1;background:#FDEEEE;border:1px solid #F5CFCF;border-radius:12px;padding:12px 6px;cursor:pointer;color:#C74848;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-weight:800"><span style="font-size:19px">◫</span><span style="font-size:11px">Truyện tranh</span></button>`:''}
+      <button onclick="jumpStep(stepIdx('content'))" style="flex:1;background:#EAF3FE;border:1px solid #CCE1F8;border-radius:12px;padding:12px 6px;cursor:pointer;color:#2F6FBF;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-weight:800"><span style="font-size:19px">≡</span><span style="font-size:11px">Bài đọc</span></button>
+    </div></div>`;
+  if(id) h+=`<div id="introvid" style="margin:16px 0 0;border-radius:16px;overflow:hidden;border:1px solid #E3E8EE;background:#000"><iframe src="https://www.youtube-nocookie.com/embed/${id}" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy" style="width:100%;aspect-ratio:16/9;display:block;border:0;background:#000"></iframe></div>`;
+  else if(v.mp4 && UI.mp4Ok!==false) h+=`<div id="introvid" style="margin:16px 0 0;border-radius:16px;overflow:hidden;border:1px solid #E3E8EE;background:#000"><video controls preload="metadata" playsinline src="${esc(v.mp4)}" style="width:100%;aspect-ratio:16/9;display:block;background:#000"></video></div>`;
+  else h+=`<div id="introvid" style="margin:16px 0 0;border-radius:16px;border:1px solid #E3E8EE;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:linear-gradient(150deg,#0F1923,#123A34);color:#7FA39B"><svg width="40" height="40" viewBox="0 0 100 100"><circle cx="50" cy="50" r="34" fill="none" stroke="#0FB89B" stroke-width="10"/><path d="M42 35 L64 50 L42 65 Z" fill="#fff"/></svg><b style="color:#fff;font-size:13.5px">Video bài học đang cập nhật</b><span style="font-size:11.5px">Đọc nội dung theo từng bước bên dưới nhé!</span></div>`;
   if(l.objectives&&l.objectives.length){ h+=`<div style="background:#fff;border:1px solid #E3E8EE;border-radius:16px;padding:14px 16px;margin:16px 0 0"><div style="font-family:'Space Grotesk';font-size:11px;font-weight:700;color:#0A6E5D;margin-bottom:8px;letter-spacing:2px">MỤC TIÊU BUỔI TẬP</div>`;
     l.objectives.forEach(o=>h+=`<div style="display:flex;gap:10px;padding:4px 0;font-size:13.5px;align-items:flex-start;line-height:1.55;color:#22303D"><span style="width:8px;height:8px;border-radius:50%;background:#0FB89B;margin-top:6px;flex:0 0 8px"></span><span>${esc(o)}</span></div>`);
     h+=`</div>`; }
+  return h;
+}
+function gotoPractice(){ const i=stepIdx('practice'); jumpStep(i>=0?i:STEPS.length-1); }
+function lessonComic(n,step){
+  const N=step.pages||COMICS[n]||0;
+  let h=`<div style="display:inline-flex;align-items:center;gap:8px;font-family:'Space Grotesk';font-size:11.5px;font-weight:700;letter-spacing:1px;padding:7px 14px;border-radius:999px;background:#FDEEEE;border:1px solid #F5CFCF;color:#C74848;margin-bottom:12px">◫ TRUYỆN TRANH · ${N} TRANG</div>`;
+  for(let i=1;i<=N;i++){ const pg=String(i).padStart(2,'0');
+    h+=`<div style="position:relative;margin-bottom:10px;border-radius:14px;overflow:hidden;border:1px solid #E3E8EE;background:#fff;min-height:120px"><img src="comics/l${n}/p${pg}.jpg" loading="lazy" alt="Trang ${i}" style="width:100%;display:block"><span style="position:absolute;bottom:8px;right:8px;background:rgba(15,25,35,.72);color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:8px;font-family:'Space Grotesk'">${i}/${N}</span></div>`; }
+  h+=`<div style="background:#EAFBF6;border:1px solid #B6EDDF;border-radius:16px;padding:16px;text-align:center;margin-top:6px"><b style="font-family:'Space Grotesk';font-size:15px;color:#0A6E5D;display:block">Đọc xong truyện rồi!</b><p style="color:#5C6B7A;font-size:13px;margin:6px 0 12px;font-weight:600">Giờ tới lượt bạn luyện tập để biến hiểu biết thành phản xạ.</p><button onclick="gotoPractice()" style="width:100%;border:none;border-radius:14px;padding:14px;font-size:14.5px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#E85B5B,#C74848);color:#fff;min-height:50px">Vào Phòng Tập Tình Huống ›</button></div>`;
   return h;
 }
 function lessonContent(step,M){
