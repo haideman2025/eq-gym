@@ -270,6 +270,31 @@ h1,h2,h3{font-weight:800}
 .csend{width:46px;height:46px;flex:0 0 46px;border:none;border-radius:14px;font-size:19px;cursor:pointer;align-self:flex-end;
   background:linear-gradient(135deg,#f5c542,#e8a820);color:#241a05}
 .csend:disabled{opacity:.5}
+/* ===== KHUNG 4 TRỤ CỘT — THANH ĐIỂM ===== */
+.pbars{margin:11px 0 4px;display:flex;flex-direction:column;gap:7px}
+.pbar{display:flex;align-items:center;gap:8px;font-size:11.5px}
+.pbar .pl{flex:0 0 118px;color:#5c4322;font-weight:700;line-height:1.2}
+.pbar .ptrk{flex:1;height:8px;border-radius:6px;background:#e2cf9f;overflow:hidden;border:1px solid #cbb079}
+.pbar .ptrk i{display:block;height:100%;background:linear-gradient(90deg,#e8a820,#c0392b);transition:width .5s}
+.pbar b{flex:0 0 26px;text-align:right;color:#8a4a1a;font-weight:900}
+.pbar.dark .pl{color:#cfe0ff}
+.pbar.dark .ptrk{background:#1a3057;border-color:#2c5088}
+.pbar.dark .ptrk i{background:linear-gradient(90deg,#f5c542,#e04938)}
+.pbar.dark b{color:var(--gold)}
+/* ===== HỒ SƠ EQ (RADAR) ===== */
+.eqp{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 15px;margin:16px 0 4px;box-shadow:var(--sh)}
+.eqp-h{font-size:12.5px;font-weight:900;color:var(--gold);letter-spacing:.8px;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.eqp-h span{margin-left:auto;font-size:10.5px;color:var(--mut);font-weight:700;letter-spacing:0}
+.eqp-body{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.radar{width:172px;height:172px;flex:0 0 172px;margin:0 auto}
+.radar .rlab{fill:#9fb3d6;font-size:11px;font-weight:700}
+.eqp-bars{flex:1;min-width:190px;display:flex;flex-direction:column;gap:8px}
+.eqp .empty2{color:var(--mut);font-size:13px;text-align:center;padding:6px 4px}
+.eqp.emptycard{text-align:center}
+/* ===== TÌNH HUỐNG: biến thể phản chiếu ===== */
+.scencard .stag.ref{color:#c9b3ff;background:rgba(167,139,250,.14);border-color:rgba(167,139,250,.35)}
+.dchips{display:inline-flex;gap:6px;margin-left:auto}
+.dchips span{font-size:10px;color:#9fb3d6;background:#132a52;border:1px solid var(--line);border-radius:6px;padding:1px 5px;font-weight:700}
 </style>
 </head>
 <body>
@@ -311,6 +336,7 @@ h1,h2,h3{font-weight:800}
       <div class="badge-t" id="bg4"><span class="em">☠️</span><span>Vua Hải Tặc<br>EQ</span></div>
     </div>
   </div>
+  <div class="wrap" id="eqprofile"></div>
   <div class="wrap" id="seamap"></div>
   <div class="reset"><button onclick="resetAll()">↻ Đặt lại hải trình</button></div>
 </div>
@@ -510,6 +536,7 @@ function renderHome(){
     html+=`</div></div>`;
   });
   document.getElementById("seamap").innerHTML=html;
+  document.getElementById("eqprofile").innerHTML=eqProfileHtml();
 }
 function lockMsg(){toast("🌫️ Vùng biển còn sương mù — chinh phục đảo trước đã, thuyền viên!")}
 
@@ -542,17 +569,11 @@ function openLesson(n){
     h+=`<div class="obj"><div class="ttl">🎯 NHIỆM VỤ TRÊN ĐẢO NÀY</div><ul>`;
     l.objectives.forEach(o=>h+=`<li>${esc(o)}</li>`);h+=`</ul></div>`;
   }
+  let hadPractice=false;
   l.sections.forEach(s=>{
     if(s.practice){
-      h+=`<div class="practice"><div class="ph">✍️ PHÒNG TẬP TÌNH HUỐNG <span class="chip">💰 +${fmt(B_PRACTICE)}</span></div>`;
-      s.items.forEach(it=>h+=renderItem(it));
-      h+=`<div class="scenzone" id="scenzone"></div>`;
-      h+=`<textarea id="ans" placeholder="Viết câu trả lời / trải nghiệm thật của bạn ở đây... càng cụ thể càng nhiều Berry 💰" oninput="saveAns()">${esc(S.ans[n]||"")}</textarea>
-        <div class="saved" id="savedmsg"></div>
-        <button class="gradebtn" id="gbtn" onclick="grade(${n})">⚔️ Nộp bài cho Thuyền Trưởng AI chấm điểm</button>
-        <div class="scorecard" id="scard"></div>
-        <div class="aiwarn" id="aiwarn"></div>
-        <div class="lhist" id="lhist"></div></div>`;
+      hadPractice=true;
+      h+=practiceBlockHtml(n,s.items);
     } else {
       h+=`<div class="sec">`;
       if(s.h) h+=`<div class="sec-h">${secEm(s.h)} ${esc(s.h)}</div>`;
@@ -560,6 +581,7 @@ function openLesson(n){
       h+=`</div>`;
     }
   });
+  if(!hadPractice) h+=practiceBlockHtml(n,null);
   const done=isDone(n);
   h+=`<div class="cta"><button class="btn ${done?"done":""}" onclick="complete(${n})">
     ${done?"✅ Đảo đã chinh phục — Ôn lại":"🏴‍☠️ Cắm cờ chinh phục đảo này"}</button></div>`;
@@ -601,24 +623,44 @@ function updateAiWarn(){
   w.innerHTML=getKey()?"🤖 Thuyền Trưởng AI (Gemini) sẵn sàng chấm bài."
     :"💡 Chưa có API key Gemini — bài sẽ được chấm <b>offline</b>. Bấm ⚙️ để thêm key (miễn phí) cho AI chấm xịn hơn.";
 }
+/* ===== KHUNG CHẤM ĐIỂM 4 TRỤ CỘT EQ ===== */
+const PILLARS=[
+  {k:"aware", em:"🧭", name:"Nhận thức"},
+  {k:"real",  em:"🔍", name:"Chân thật & Cụ thể"},
+  {k:"choice",em:"⚔️", name:"Làm chủ & Lựa chọn"},
+  {k:"empath",em:"🔥", name:"Thấu cảm & Ứng dụng"}
+];
+const PILLAR_MAP={aware:"Nhận thức",real:"Chân thật & Cụ thể",choice:"Làm chủ & Lựa chọn",empath:"Thấu cảm & Ứng dụng"};
+const MOD_FOCUS={0:"aware",1:"aware",2:"choice",3:"empath"};
+function lessonFocus(n){ return MOD_FOCUS[LESSONS[n].module]||"aware"; }
+function cl25(x){ x=Math.round(+x||0); return x<0?0:(x>25?25:x); }
+function clampDims(o){ return {aware:cl25(o.aware),real:cl25(o.real),choice:cl25(o.choice),empath:cl25(o.empath)}; }
+function tipFor(k){
+  return {aware:"gọi tên chính xác cảm xúc và điều nó đang muốn nói với bạn.",
+    real:"kể một tình huống THẬT có thời gian, nơi chốn và chi tiết cụ thể.",
+    choice:"mô tả bạn đã (hoặc sẽ) chọn phản ứng nào thay vì phản xạ theo thói quen cũ.",
+    empath:"nghĩ về cảm xúc/nhu cầu của người kia và cách bạn áp dụng điều này vào đời thực."}[k]||"";
+}
+
 async function grade(n){
   const ans=(S.ans[n]||"").trim();
   if(ans.length<20){toast("✍️ Viết ít nhất vài câu đã thuyền viên ơi (≥20 ký tự)");return}
   const btn=document.getElementById("gbtn");btn.disabled=true;btn.textContent="🧭 Thuyền Trưởng đang chấm...";
   const l=LESSONS[n];
   const ps=l.sections.find(s=>s.practice);
-  const prompt=ps?ps.items.map(i=>i.t).join("\n").slice(0,800):"";
+  const prompt=ps?ps.items.map(i=>i.t).join("\n").slice(0,800):(REFLECT_PROMPTS[n]||l.subtitle||"");
   const sco=S.scen[n]; const scen=sco?((sco.body||sco)+(sco.question?" "+sco.question:"")):"";
+  const focus=lessonFocus(n);
   let res=null;
   const key=getKey();
   if(key){
-    try{ res=await gradeGemini(key,l,prompt,ans,scen) }catch(e){ console.warn(e); }
+    try{ res=await gradeGemini(key,l,prompt,ans,scen,focus) }catch(e){ console.warn(e); }
   }
-  if(!res) res=gradeOffline(ans);
+  if(!res) res=gradeOffline(ans,focus);
   S.scores[n]=res;
   // lưu vào lịch sử luyện tập (không ghi đè — mỗi lần luyện là 1 bản ghi)
   S.history[n]=S.history[n]||[];
-  S.history[n].unshift({ts:Date.now(),scenario:scen,answer:ans,score:res.score,feedback:res.feedback,tip:res.tip,by:res.by});
+  S.history[n].unshift({ts:Date.now(),scenario:scen,answer:ans,score:res.score,dims:res.dims,feedback:res.feedback,tip:res.tip,by:res.by});
   if(S.history[n].length>50) S.history[n]=S.history[n].slice(0,50);
   S.practices=(S.practices||0)+1;
   let earn=0;
@@ -629,81 +671,138 @@ async function grade(n){
   btn.disabled=false;btn.textContent="⚔️ Nộp bài luyện tập lần nữa";
   if(earn>0) toast("💰 +"+fmt(earn)+" Berry tiền thưởng!");
 }
-async function gradeGemini(key,l,prompt,ans,scen){
-  const scenLine=scen?`\nTÌNH HUỐNG ĐANG LUYỆN: ${scen.slice(0,700)}\n(Hãy chấm dựa trên việc học viên xử lý tình huống này tốt đến đâu.)`:"";
+async function gradeGemini(key,l,prompt,ans,scen,focus){
+  const scenLine=scen?`\nTÌNH HUỐNG/CÂU HỎI ĐANG LUYỆN: ${scen.slice(0,700)}`:"";
+  const focusName=PILLAR_MAP[focus]||"Nhận thức";
   const body={
     contents:[{parts:[{text:
-`Bạn là "Thuyền Trưởng AI" — huấn luyện viên EQ nghiêm khắc nhưng ấm áp, nói giọng hào sảng kiểu thuyền trưởng hải tặc (xưng "ta", gọi học viên là "thuyền viên"), tiếng Việt.
-Chấm bài thực hành EQ dưới đây theo 4 tiêu chí: (1) mức độ tự nhìn lại bản thân, (2) cụ thể/chân thật, (3) đúng yêu cầu bài tập, (4) chiều sâu cảm xúc.
+`Bạn là "Thuyền Trưởng AI" — huấn luyện viên EQ nghiêm khắc nhưng ấm áp, giọng hào sảng kiểu thuyền trưởng hải tặc (xưng "ta", gọi học viên là "thuyền viên"), tiếng Việt.
+Chấm bài thực hành EQ theo KHUNG 4 TRỤ CỘT, MỖI TRỤ 0-25 điểm:
+1. aware — Nhận thức: gọi tên được cảm xúc / mô thức / giá trị / động cơ của bản thân.
+2. real — Chân thật & Cụ thể: tình huống thật, chi tiết, không chung chung sáo rỗng.
+3. choice — Làm chủ & Lựa chọn: thể hiện điều tiết cảm xúc và chọn phản ứng có ý thức.
+4. empath — Thấu cảm & Ứng dụng: hiểu cảm xúc/nhu cầu người khác hoặc áp dụng được vào đời thực.
+Trọng tâm của bài học này là trụ "${focusName}" — hãy nhấn mạnh trụ này trong nhận xét. Chấm công tâm, đừng dễ dãi.
 
 BÀI HỌC: ${l.title}
-MỤC TIÊU: ${l.objectives.join("; ")}
-YÊU CẦU THỰC HÀNH: ${prompt}${scenLine}
+MỤC TIÊU: ${(l.objectives&&l.objectives.join("; "))||l.subtitle||""}
+ĐỀ THỰC HÀNH: ${prompt}${scenLine}
 BÀI LÀM CỦA HỌC VIÊN: """${ans.slice(0,2500)}"""
 
-Trả về DUY NHẤT JSON: {"score": <0-100>, "feedback": "<3-4 câu nhận xét cụ thể giọng thuyền trưởng>", "tip": "<1 gợi ý luyện tập tiếp>"}`}]}],
-    generationConfig:{temperature:0.7,responseMimeType:"application/json"}
+Trả về DUY NHẤT JSON: {"aware":<0-25>,"real":<0-25>,"choice":<0-25>,"empath":<0-25>,"feedback":"<3-4 câu giọng thuyền trưởng: khen trụ mạnh nhất, chỉ ra trụ cần luyện>","tip":"<1 gợi ý cụ thể để nâng trụ yếu nhất>"}`}]}],
+    generationConfig:{temperature:0.6,responseMimeType:"application/json"}
   };
   const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+encodeURIComponent(key),
     {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
   if(!r.ok) throw new Error("HTTP "+r.status);
   const j=await r.json();
-  const txt=j.candidates[0].content.parts[0].text;
-  const o=JSON.parse(txt);
-  return {score:Math.max(0,Math.min(100,Math.round(o.score))),feedback:o.feedback,tip:o.tip||"",by:"ai"};
+  const o=JSON.parse(j.candidates[0].content.parts[0].text);
+  const dims=clampDims(o);
+  const score=dims.aware+dims.real+dims.choice+dims.empath;
+  return {score,dims,feedback:o.feedback||"",tip:o.tip||"",by:"ai"};
 }
-function gradeOffline(ans){
-  const t=ans.toLowerCase();
-  let score=30;
-  score+=Math.min(25,Math.floor(ans.length/40));           // độ dài
-  const emo=["vui","buồn","giận","lo","sợ","tức","hạnh phúc","thất vọng","biết ơn","tổn thương","bình an","xấu hổ","tự hào","cô đơn","hào hứng"];
-  score+=Math.min(15,emo.filter(w=>t.includes(w)).length*5);      // từ vựng cảm xúc
-  const ref=["mình","tôi","nhận ra","cảm thấy","vì","bởi","cần","giá trị","lựa chọn","thay vì"];
-  score+=Math.min(20,ref.filter(w=>t.includes(w)).length*3);      // tự phản chiếu
-  if(/hôm nay|sáng nay|lúc|khi /.test(t)) score+=10;              // tình huống cụ thể
-  score=Math.min(100,score);
+function gradeOffline(ans,focus){
+  const t=ans.toLowerCase(); const len=ans.length;
+  const cnt=(arr)=>arr.filter(w=>t.includes(w)).length;
+  const emo=["vui","buồn","giận","lo lắng","lo","sợ","tức","hạnh phúc","thất vọng","biết ơn","tổn thương","bình an","xấu hổ","tự hào","cô đơn","hào hứng","áp lực","bối rối","nặng nề"];
+  const refl=["mình","tôi","nhận ra","cảm thấy","tự hỏi","bên trong","thói quen","giá trị","mô thức","hiểu ra"];
+  const spec=["hôm nay","sáng nay","hôm qua","tối qua","lúc","khi ","vừa ","đã "];
+  const ch=["chọn","thay vì","quyết định","cần","sẽ","lần sau","dừng lại","hít thở","bình tĩnh","kiểm soát","đáp lại"];
+  const emp=["người khác","bạn ấy","họ","lắng nghe","xin lỗi","thấu hiểu","đồng cảm","áp dụng","chia sẻ","tôn trọng","ranh giới","gia đình","đồng nghiệp","con","vợ","chồng"];
+  let dims={
+    aware: cl25(5+cnt(emo)*3+cnt(refl)*2),
+    real:  cl25(5+Math.floor(len/45)+cnt(spec)*3),
+    choice:cl25(6+cnt(ch)*4),
+    empath:cl25(6+cnt(emp)*4)
+  };
+  if(focus&&dims[focus]!=null) dims[focus]=cl25(dims[focus]+1); // nhẹ nhàng thưởng trọng tâm
+  const score=dims.aware+dims.real+dims.choice+dims.empath;
+  const arr=PILLARS.map(p=>({p,v:dims[p.k]})).sort((a,b)=>b.v-a.v);
+  const strong=arr[0].p.name, weak=arr[3].p, weakName=weak.name;
   let fb,tip;
-  if(score>=80){fb="Hô hô! Bài làm chất lượng đấy thuyền viên — ta thấy ngươi thật sự nhìn vào bên trong mình, có tình huống cụ thể và gọi tên được cảm xúc.";tip="Thử nâng cấp: viết thêm nhu cầu phía sau cảm xúc đó là gì.";}
-  else if(score>=60){fb="Khá lắm! Ngươi đã chịu viết thật. Nhưng ta muốn thấy nhiều chi tiết cụ thể hơn — chuyện gì xảy ra, lúc nào, cảm xúc chính xác là gì?";tip="Dùng công thức: Tình huống → Cảm xúc → Nhu cầu → Lựa chọn.";}
-  else {fb="Chưa đủ độ sâu đâu thuyền viên! Viết ngắn thế này chưa luyện được cơ bắp cảm xúc. Kể lại một tình huống THẬT trong ngày của ngươi xem nào.";tip="Viết ít nhất 4-5 câu: chuyện gì xảy ra và bạn cảm thấy gì.";}
-  return {score,feedback:fb,tip,by:"off"};
+  if(score>=80){fb=`Hô hô! Bài chất lượng đấy thuyền viên — ta thấy ngươi mạnh nhất ở "${strong}". Cứ giữ phong độ này mà ra khơi!`;tip=`Nâng thêm trụ "${weakName}": ${tipFor(weak.k)}`;}
+  else if(score>=55){fb=`Khá lắm! Ngươi chịu viết thật. Điểm sáng là "${strong}", nhưng trụ "${weakName}" còn mỏng — hãy đào sâu hơn.`;tip=`Luyện trụ "${weakName}": ${tipFor(weak.k)}`;}
+  else {fb=`Chưa đủ độ sâu đâu thuyền viên! Viết ngắn quá thì chưa luyện được cơ bắp cảm xúc. Trụ yếu nhất của ngươi là "${weakName}".`;tip=`Bắt đầu từ trụ "${weakName}": ${tipFor(weak.k)}`;}
+  return {score,dims,feedback:fb,tip,by:"off"};
+}
+function pillarBarsHtml(dims,dark){
+  if(!dims) return "";
+  return `<div class="pbars">`+PILLARS.map(p=>{
+    const v=dims[p.k]!=null?dims[p.k]:0; const pct=Math.round(v/25*100);
+    return `<div class="pbar${dark?" dark":""}"><span class="pl">${p.em} ${p.name}</span><span class="ptrk"><i style="width:${pct}%"></i></span><b>${(typeof v==="number"&&v%1)?v.toFixed(1):v}</b></div>`;
+  }).join("")+`</div>`;
 }
 function showScore(res){
   const c=document.getElementById("scard");if(!c)return;
   c.classList.add("on");
   c.innerHTML=`<div class="schead"><div class="scoreball"><b>${res.score}</b><span>/100</span></div>
     <div><h4>${res.by==="ai"?"🤖 Thuyền Trưởng AI chấm":"⚖️ Chấm offline (chưa có API key)"}</h4>
-    <div style="font-size:11px;color:#8a6a35">${res.score>=80?"⭐⭐⭐ Xuất sắc":res.score>=60?"⭐⭐ Tốt":"⭐ Cần luyện thêm"}</div></div></div>
+    <div style="font-size:11px;color:#8a6a35">${res.score>=80?"⭐⭐⭐ Xuất sắc":res.score>=55?"⭐⭐ Tốt":"⭐ Cần luyện thêm"} · Khung 4 trụ cột EQ</div></div></div>
+    ${pillarBarsHtml(res.dims)}
     <div class="fb">${esc(res.feedback)}</div>${res.tip?`<div class="tip">💡 ${esc(res.tip)}</div>`:""}`;
 }
 
 /* ===== PHÒNG TẬP TÌNH HUỐNG (AI SCENARIOS) ===== */
+const REFLECT_PROMPTS={
+  0:"Vì sao bạn quyết định bắt đầu hành trình EQ GYM này? Sau 30 ngày bạn muốn con người mình thay đổi thế nào, và bạn cam kết luyện tập ra sao?",
+  1:"Nhìn lại cuộc sống của bạn: một lần EQ (hoặc thiếu EQ) đã ảnh hưởng lớn đến kết quả công việc hay một mối quan hệ của bạn là khi nào? Bạn rút ra điều gì?",
+  12:"Kết thúc chặng HIỂU MÌNH, bạn nhận ra điều gì MỚI về cảm xúc, mô thức phản ứng và giá trị của chính mình mà trước đây bạn chưa từng thấy rõ?",
+  13:"Đâu là kiểu tình huống bạn hay mất bình tĩnh hoặc phản ứng theo thói quen cũ? Bước vào chặng LÀM CHỦ MÌNH, bạn muốn rèn 'năng lực lựa chọn' của mình như thế nào?",
+  29:"Con người EQ của bạn hôm nay khác gì so với ngày đầu ra khơi? Thay đổi bạn tự hào nhất là gì, và bạn sẽ duy trì nó ra sao sau khi rời EQ GYM?"
+};
+function practiceKind(n){ return REFLECT_PROMPTS[n]!=null?"reflect":"situation"; }
+function practiceBlockHtml(n,items){
+  const ref=practiceKind(n)==="reflect";
+  const head=ref?"🪞 BÀI PHẢN CHIẾU":"✍️ PHÒNG TẬP TÌNH HUỐNG";
+  let h=`<div class="practice"><div class="ph">${head} <span class="chip">💰 +${fmt(B_PRACTICE)}</span></div>`;
+  if(items&&items.length){ items.forEach(it=>h+=renderItem(it)); }
+  else if(ref&&REFLECT_PROMPTS[n]){ h+=`<p>${esc(REFLECT_PROMPTS[n])}</p>`; }
+  const ph=ref?"Viết dòng phản chiếu thật lòng của bạn ở đây... càng thành thật càng nhiều Berry 💰":"Viết câu trả lời / trải nghiệm thật của bạn ở đây... càng cụ thể càng nhiều Berry 💰";
+  h+=`<div class="scenzone" id="scenzone"></div>
+    <textarea id="ans" placeholder="${ph}" oninput="saveAns()">${esc(S.ans[n]||"")}</textarea>
+    <div class="saved" id="savedmsg"></div>
+    <button class="gradebtn" id="gbtn" onclick="grade(${n})">⚔️ Nộp bài cho Thuyền Trưởng AI chấm điểm</button>
+    <div class="scorecard" id="scard"></div>
+    <div class="aiwarn" id="aiwarn"></div>
+    <div class="lhist" id="lhist"></div></div>`;
+  return h;
+}
 function renderScenario(n){
   const z=document.getElementById("scenzone"); if(!z) return;
+  const ref=practiceKind(n)==="reflect";
   const sc=S.scen[n];
   if(!sc){
-    z.innerHTML=`<div class="genrow"><button class="genbtn" id="genbtn" onclick="genScenario(${n})">🎲 Nhận tình huống thực tế để luyện</button></div>`;
+    const lbl=ref?"🎲 Gợi ý một góc phản chiếu khác":"🎲 Nhận tình huống thực tế để luyện";
+    z.innerHTML=`<div class="genrow"><button class="genbtn" id="genbtn" onclick="genScenario(${n})">${lbl}</button></div>`;
     return;
   }
+  const tag=ref?`<span class="stag ref">🪞 GÓC PHẢN CHIẾU</span>`:`<span class="stag">🎯 TÌNH HUỐNG THỰC HÀNH</span>`;
+  const re=ref?"🎲 Góc khác":"🎲 Đổi tình huống khác";
   z.innerHTML=`<div class="scencard">
-    <span class="stag">🎯 TÌNH HUỐNG THỰC HÀNH</span>
+    ${tag}
     <div class="sbody">${esc(sc.body||sc)}</div>
     ${sc.question?`<div class="squest">👉 ${esc(sc.question)}</div>`:""}
-    <button class="sre" onclick="genScenario(${n})">🎲 Đổi tình huống khác</button>
+    <button class="sre" onclick="genScenario(${n})">${re}</button>
   </div>`;
 }
 async function genScenario(n){
   const z=document.getElementById("scenzone"); if(!z) return;
-  z.innerHTML=`<div class="sload"><span class="sp"></span> Thuyền Trưởng đang dựng tình huống cho ngươi...</div>`;
+  const ref=practiceKind(n)==="reflect";
+  z.innerHTML=`<div class="sload"><span class="sp"></span> ${ref?"Thuyền Trưởng đang nghĩ một góc phản chiếu cho ngươi...":"Thuyền Trưởng đang dựng tình huống cho ngươi..."}</div>`;
   const l=LESSONS[n]; const key=getKey();
   let sc=null;
-  if(key){ try{ sc=await scenarioGemini(key,l) }catch(e){ console.warn(e) } }
-  if(!sc) sc=scenarioOffline(l);
+  if(key){ try{ sc=await scenarioGemini(key,l,ref) }catch(e){ console.warn(e) } }
+  if(!sc) sc=scenarioOffline(l,ref);
   S.scen[n]=sc; save(); renderScenario(n);
   const ta=document.getElementById("ans"); if(ta&&!ta.value) ta.focus();
 }
-async function scenarioGemini(key,l){
-  const prompt=`Bạn là "Thuyền Trưởng AI" của EQ GYM. Hãy tạo MỘT tình huống đời thực (ở nhà, nơi làm việc, hoặc trong các mối quan hệ) NGẮN GỌN 2-4 câu, sát với chủ đề bài học bên dưới, để học viên luyện phản ứng cảm xúc (EQ). Kèm đúng 1 câu hỏi thực hành yêu cầu học viên viết cách họ sẽ suy nghĩ / cảm nhận / phản ứng. Viết ngôi thứ hai ("bạn"), gần gũi, cụ thể.
+async function scenarioGemini(key,l,ref){
+  const prompt=ref
+   ?`Bạn là "Thuyền Trưởng AI" của EQ GYM. Hãy đặt MỘT góc PHẢN CHIẾU sâu sắc (self-reflection) giúp học viên nhìn lại chính mình, phù hợp với chủ đề bài học bên dưới. Gần gũi, khơi gợi, ngôi thứ hai ("bạn") — KHÔNG phải role-play tình huống giả định.
+Chủ đề bài học: ${l.title}
+Mục tiêu: ${(l.objectives&&l.objectives.join("; "))||l.subtitle||""}
+Trả về DUY NHẤT JSON: {"body":"<1-2 câu dẫn dắt>","question":"<1 câu hỏi phản chiếu>"}`
+   :`Bạn là "Thuyền Trưởng AI" của EQ GYM. Hãy tạo MỘT tình huống đời thực (ở nhà, nơi làm việc, hoặc trong các mối quan hệ) NGẮN GỌN 2-4 câu, sát với chủ đề bài học bên dưới, để học viên luyện phản ứng cảm xúc (EQ). Kèm đúng 1 câu hỏi thực hành yêu cầu học viên viết cách họ sẽ suy nghĩ / cảm nhận / phản ứng. Viết ngôi thứ hai ("bạn"), gần gũi, cụ thể.
 Chủ đề bài học: ${l.title}
 Mục tiêu: ${(l.objectives&&l.objectives.join("; "))||l.subtitle||""}
 Trả về DUY NHẤT JSON: {"body":"<tình huống 2-4 câu>","question":"<1 câu hỏi thực hành>"}`;
@@ -713,6 +812,30 @@ Trả về DUY NHẤT JSON: {"body":"<tình huống 2-4 câu>","question":"<1 c�
   if(!r.ok) throw new Error("HTTP "+r.status);
   const j=await r.json(); const o=JSON.parse(j.candidates[0].content.parts[0].text);
   return {body:o.body||"",question:o.question||""};
+}
+const REFLECT_BANK={
+  0:[
+    {body:"Trước khi ra khơi, hãy neo lại lý do của mình.",question:"Điều gì trong cuộc sống khiến bạn muốn rèn EQ ngay lúc này, và bạn sẽ tự nhắc mình thế nào khi muốn bỏ cuộc?"},
+    {body:"Mỗi hành trình lớn bắt đầu từ một cam kết nhỏ.",question:"Bạn cam kết dành mấy phút mỗi ngày cho EQ GYM, vào lúc nào, và điều gì có thể cản bạn?"}
+  ],
+  1:[
+    {body:"EQ hiện diện trong những khoảnh khắc rất đời thường.",question:"Một lần bạn xử lý cảm xúc tốt (hoặc chưa tốt) và nó đổi hướng cả một cuộc trò chuyện/quyết định — chuyện đó là gì?"},
+    {body:"Người ta thường nhớ cách bạn khiến họ cảm thấy hơn là điều bạn nói.",question:"Ai là người có EQ khiến bạn nể phục, và cụ thể họ làm gì khiến bạn muốn học theo?"}
+  ],
+  2:[
+    {body:"Cuối một chặng, tấm bản đồ bên trong bạn đã khác đi.",question:"Sau chặng HIỂU MÌNH, điều bất ngờ nhất bạn phát hiện về cảm xúc hoặc mô thức của chính mình là gì?"},
+    {body:"Hiểu mình là nền móng của mọi thay đổi.",question:"Một giá trị hoặc nhu cầu sâu bên trong mà giờ bạn mới gọi tên được rõ ràng là gì?"},
+    {body:"Trước khi học làm chủ, hãy biết mình cần làm chủ điều gì.",question:"Kiểu tình huống nào khiến bạn dễ mất bình tĩnh nhất, và bạn muốn phản ứng khác đi thế nào?"}
+  ],
+  3:[
+    {body:"Đích đến của hải trình không phải một hòn đảo — mà là con người bạn trở thành.",question:"So với ngày đầu ra khơi, thay đổi lớn nhất trong cách bạn sống với cảm xúc là gì?"},
+    {body:"Cơ bắp cảm xúc chỉ giữ được nếu tiếp tục luyện.",question:"Sau EQ GYM, bạn sẽ duy trì thói quen nào để không đánh mất những gì đã rèn được?"}
+  ]
+};
+function scenarioOffline(l,ref){
+  const src=ref?(REFLECT_BANK[l.module]||REFLECT_BANK[2]):(SCEN_BANK[l.module]||SCEN_BANK[1]);
+  const s=src[Math.floor(Math.random()*src.length)];
+  return {body:s.body,question:s.question};
 }
 const SCEN_BANK={
   0:[
@@ -752,14 +875,58 @@ function renderLessonHistory(n){
   if(!h.length){ z.innerHTML=""; return; }
   let html=`<div class="hh">📈 LỊCH SỬ LUYỆN TẬP ĐẢO NÀY (${h.length})</div>`;
   h.forEach(it=>{
+    const dchips=it.dims?`<span class="dchips">`+PILLARS.map(p=>`<span title="${p.name}">${p.em}${it.dims[p.k]}</span>`).join("")+`</span>`:"";
     html+=`<div class="hnode">
-      <div class="hmeta"><span class="hsc">★ ${it.score}/100</span><span>${it.by==="ai"?"🤖 AI":"⚖️ offline"}</span><span>${fmtDate(it.ts)}</span></div>
+      <div class="hmeta"><span class="hsc">★ ${it.score}/100</span><span>${it.by==="ai"?"🤖 AI":"⚖️ offline"}</span><span>${fmtDate(it.ts)}</span>${dchips}</div>
       ${it.scenario?`<div class="hscn">🎯 ${esc(clip(it.scenario,160))}</div>`:""}
       <div class="hans">${esc(clip(it.answer,400))}</div>
       ${it.feedback?`<div class="hfb">🧭 ${esc(clip(it.feedback,300))}</div>`:""}
     </div>`;
   });
   z.innerHTML=html;
+}
+/* ===== HỒ SƠ EQ (RADAR TỔNG HỢP) ===== */
+function eqProfile(){
+  let sums={aware:0,real:0,choice:0,empath:0}, cnt=0;
+  Object.values(S.history||{}).forEach(arr=>arr.forEach(it=>{
+    if(it.dims){ cnt++; PILLARS.forEach(p=>sums[p.k]+=(it.dims[p.k]||0)); }
+  }));
+  if(!cnt) return null;
+  const avg={}; PILLARS.forEach(p=>avg[p.k]=sums[p.k]/cnt);
+  return {avg,cnt};
+}
+function eqRadarSVG(avg){
+  const order=[{k:"aware",a:-90},{k:"choice",a:0},{k:"empath",a:90},{k:"real",a:180}];
+  const cx=100,cy=100,R=70;
+  const pt=(val,ang)=>{const r=val/25*R;const rad=ang*Math.PI/180;return [cx+r*Math.cos(rad),cy+r*Math.sin(rad)];};
+  let grid="";
+  [0.25,0.5,0.75,1].forEach(f=>{
+    const poly=order.map(o=>pt(25*f,o.a).map(x=>x.toFixed(1)).join(",")).join(" ");
+    grid+=`<polygon points="${poly}" fill="none" stroke="#33507e" stroke-opacity="0.5"/>`;
+  });
+  let axes="";
+  order.forEach(o=>{const p=pt(25,o.a);axes+=`<line x1="${cx}" y1="${cy}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}" stroke="#33507e" stroke-opacity="0.5"/>`;});
+  const dataPoly=order.map(o=>pt(avg[o.k],o.a).map(x=>x.toFixed(1)).join(",")).join(" ");
+  const dots=order.map(o=>{const p=pt(avg[o.k],o.a);return `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.2" fill="#f5c542"/>`;}).join("");
+  return `<svg viewBox="0 0 200 205" class="radar">
+    ${grid}${axes}
+    <polygon points="${dataPoly}" fill="rgba(245,197,66,.25)" stroke="#f5c542" stroke-width="2"/>
+    ${dots}
+    <text x="100" y="15" text-anchor="middle" class="rlab">Nhận thức</text>
+    <text x="184" y="104" text-anchor="end" class="rlab">Làm chủ</text>
+    <text x="100" y="199" text-anchor="middle" class="rlab">Thấu cảm</text>
+    <text x="16" y="104" text-anchor="start" class="rlab">Chân thật</text>
+  </svg>`;
+}
+function eqProfileHtml(){
+  const p=eqProfile();
+  if(!p) return `<div class="eqp emptycard"><div class="eqp-h">📊 HỒ SƠ EQ CỦA BẠN</div><div class="empty2">Chưa có dữ liệu — luyện tập vài bài để lộ diện điểm mạnh/yếu 4 trụ cột EQ của bạn nhé!</div></div>`;
+  const bars=PILLARS.map(pl=>{const v=p.avg[pl.k];const pct=Math.round(v/25*100);
+    return `<div class="pbar dark"><span class="pl">${pl.em} ${pl.name}</span><span class="ptrk"><i style="width:${pct}%"></i></span><b>${v.toFixed(1)}</b></div>`;}).join("");
+  return `<div class="eqp">
+    <div class="eqp-h">📊 HỒ SƠ EQ CỦA BẠN <span>${p.cnt} lần luyện · thang 25</span></div>
+    <div class="eqp-body">${eqRadarSVG(p.avg)}<div class="eqp-bars">${bars}</div></div>
+  </div>`;
 }
 /* ===== TRỢ LÝ THUYỀN TRƯỞNG AI (CHAT) ===== */
 let COURSE_MAP=null;
@@ -898,7 +1065,7 @@ function renderJournal(){
   const scores=entries.map(e=>e.score).filter(x=>x!=null);
   const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):"—";
   const best=scores.length?Math.max.apply(null,scores):"—";
-  let h=`<div class="statrow" style="margin-top:6px">
+  let h=eqProfileHtml()+`<div class="statrow" style="margin-top:12px">
     <div class="stat"><b>${entries.length}</b><span>Lần luyện tập</span></div>
     <div class="stat"><b>${avg}</b><span>Điểm trung bình</span></div>
     <div class="stat"><b>${best}</b><span>Điểm cao nhất</span></div></div>`;
