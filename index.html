@@ -210,6 +210,66 @@ h1,h2,h3{font-weight:800}
 .reset{margin:28px 0 10px;text-align:center}
 .reset button{background:none;border:1px solid var(--line);color:var(--mut);border-radius:10px;padding:9px 16px;font-size:12.5px;cursor:pointer}
 .confetti{position:fixed;inset:0;pointer-events:none;z-index:85}
+/* ===== SCENARIO (PHÒNG TẬP TÌNH HUỐNG) ===== */
+.scenzone{margin-top:12px}
+.genrow{display:flex;gap:8px;flex-wrap:wrap}
+.genbtn{flex:1;min-width:180px;border:1px dashed #4a7ec2;border-radius:12px;padding:12px;font-size:13.5px;font-weight:800;cursor:pointer;
+  background:rgba(63,185,246,.1);color:#a8d8ff;display:flex;align-items:center;justify-content:center;gap:8px}
+.genbtn:active{transform:scale(.98)}
+.genbtn:disabled{opacity:.55}
+.scencard{background:linear-gradient(155deg,#132a52,#0e2144);border:1px solid #3a6bb0;border-radius:14px;padding:13px 14px;position:relative}
+.scencard .stag{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;letter-spacing:.8px;color:#8fd4ff;
+  background:rgba(63,185,246,.14);border:1px solid rgba(63,185,246,.3);border-radius:999px;padding:3px 10px;margin-bottom:8px}
+.scencard .sbody{font-size:14.5px;color:#eaf1ff;line-height:1.6;white-space:pre-wrap}
+.scencard .squest{margin-top:9px;font-size:14px;font-weight:800;color:var(--gold);line-height:1.5}
+.scencard .sre{margin-top:11px;background:none;border:1px solid var(--line);color:var(--mut);border-radius:10px;
+  padding:8px 12px;font-size:12px;cursor:pointer;font-weight:700}
+.scencard .sre:active{transform:scale(.97)}
+.sload{display:flex;align-items:center;gap:9px;color:#a8d8ff;font-size:13px;padding:6px 2px}
+.sload .sp{width:16px;height:16px;border:2px solid #3a6bb0;border-top-color:#a8d8ff;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* ===== LESSON HISTORY ===== */
+.lhist{margin-top:16px}
+.lhist .hh{font-size:12px;font-weight:800;color:var(--gold);letter-spacing:.8px;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.hnode{background:#0d1f3d;border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:9px}
+.hnode .hmeta{display:flex;align-items:center;gap:8px;font-size:10.5px;color:var(--mut);margin-bottom:5px;flex-wrap:wrap}
+.hnode .hsc{font-weight:900;color:var(--gold)}
+.hnode .hscn{font-size:12px;color:#8fd4ff;font-style:italic;margin-bottom:5px;line-height:1.5}
+.hnode .hans{font-size:13px;color:#dbe6fb;white-space:pre-wrap;line-height:1.55}
+.hnode .hfb{font-size:12px;color:#b9c8e6;margin-top:6px;border-top:1px dashed var(--line);padding-top:6px;line-height:1.5}
+/* ===== ASSISTANT CHAT ===== */
+#assistant.view.on{display:flex;flex-direction:column;height:100dvh}
+.chat-top{position:sticky;top:0;z-index:30;background:rgba(6,15,30,.95);backdrop-filter:blur(10px);
+  padding:calc(env(safe-area-inset-top) + 12px) 16px 11px;border-bottom:1px solid var(--line)}
+.chat-top .ct-row{display:flex;align-items:center;gap:11px;max-width:640px;margin:0 auto}
+.chat-top .cav{width:40px;height:40px;flex:0 0 40px;border-radius:12px;background:radial-gradient(circle at 35% 30%,#1d3a68,#0e2144);
+  border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:22px}
+.chat-top b{font-size:15px;display:block}
+.chat-top span{font-size:11px;color:var(--mut)}
+.chat-top .cclr{margin-left:auto;background:var(--card2);border:1px solid var(--line);color:var(--mut);
+  border-radius:10px;width:36px;height:36px;font-size:15px;cursor:pointer}
+.cmsgs{flex:1;overflow-y:auto;padding:16px;max-width:640px;margin:0 auto;width:100%}
+.bub{max-width:86%;padding:11px 14px;border-radius:16px;font-size:14.5px;line-height:1.6;margin-bottom:11px;white-space:pre-wrap;word-wrap:break-word}
+.bub.ai{background:var(--card);border:1px solid var(--line);border-top-left-radius:5px;color:#eaf1ff}
+.bub.me{background:linear-gradient(135deg,#e8a820,#c98a12);color:#241a05;margin-left:auto;border-top-right-radius:5px;font-weight:600}
+.bub.ai .cap{display:block;font-size:10.5px;font-weight:800;color:var(--gold);margin-bottom:4px;letter-spacing:.5px}
+.typing{display:inline-flex;gap:4px;padding:4px 0}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--mut);animation:blink 1.2s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,60%,100%{opacity:.25}30%{opacity:1}}
+.qchips{display:flex;gap:8px;overflow-x:auto;padding:0 16px 8px;max-width:640px;margin:0 auto;width:100%;scrollbar-width:none}
+.qchips::-webkit-scrollbar{display:none}
+.qchip{white-space:nowrap;background:var(--card2);border:1px solid var(--line);color:#cfe0ff;border-radius:999px;
+  padding:8px 13px;font-size:12px;cursor:pointer;flex:0 0 auto}
+.qchip:active{transform:scale(.97)}
+.cbar{position:sticky;bottom:0;background:rgba(6,15,30,.96);backdrop-filter:blur(12px);border-top:1px solid var(--line);
+  padding:10px 12px calc(env(safe-area-inset-bottom) + 76px);display:flex;gap:9px;max-width:640px;margin:0 auto;width:100%}
+.cbar textarea{flex:1;background:#0a1a36;border:1px solid var(--line);border-radius:14px;color:var(--tx);
+  padding:11px 13px;font-size:14.5px;font-family:inherit;resize:none;max-height:120px;line-height:1.4}
+.cbar textarea:focus{outline:none;border-color:var(--gold)}
+.csend{width:46px;height:46px;flex:0 0 46px;border:none;border-radius:14px;font-size:19px;cursor:pointer;align-self:flex-end;
+  background:linear-gradient(135deg,#f5c542,#e8a820);color:#241a05}
+.csend:disabled{opacity:.5}
 </style>
 </head>
 <body>
@@ -270,9 +330,26 @@ h1,h2,h3{font-weight:800}
   <div class="wrap" id="jbody"></div>
 </div>
 
+<div id="assistant" class="view">
+  <div class="chat-top">
+    <div class="ct-row">
+      <div class="cav">🧭</div>
+      <div><b>Thuyền Trưởng AI</b><span id="cstatus">Trợ lý đồng hành hải trình EQ</span></div>
+      <button class="cclr" onclick="clearChat()" title="Xóa hội thoại">🗑️</button>
+    </div>
+  </div>
+  <div class="cmsgs" id="cmsgs"></div>
+  <div class="qchips" id="qchips"></div>
+  <div class="cbar">
+    <textarea id="cinput" rows="1" placeholder="Hỏi Thuyền Trưởng bất cứ điều gì về EQ, bài học, hoặc tình huống của bạn..." oninput="autoGrow(this)"></textarea>
+    <button class="csend" id="csend" onclick="sendChat()">➤</button>
+  </div>
+</div>
+
 <div class="nav">
   <a id="nav-home" class="on" onclick="tab('home')"><span class="ic">🗺️</span>Hải trình</a>
   <a id="nav-journal" onclick="tab('journal')"><span class="ic">📜</span>Nhật ký</a>
+  <a id="nav-assistant" onclick="tab('assistant')"><span class="ic">🧭</span>Trợ lý</a>
   <a id="nav-set" onclick="openSettings()"><span class="ic">⚙️</span>AI</a>
 </div>
 
@@ -375,6 +452,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){_mem=S}
 let S=load();
 S.done=S.done||[]; S.ans=S.ans||{}; S.scores=S.scores||{}; S.graded=S.graded||{};
 S.streak=S.streak||0; S.last=S.last||null; S.bounty=S.bounty||0;
+S.history=S.history||{}; S.chat=S.chat||[]; S.scen=S.scen||{}; S.practices=S.practices||0;
 
 function isDone(n){return S.done.includes(n)}
 function unlocked(n){return n===0||isDone(n-1)}
@@ -466,13 +544,15 @@ function openLesson(n){
   }
   l.sections.forEach(s=>{
     if(s.practice){
-      h+=`<div class="practice"><div class="ph">✍️ THỬ THÁCH THỰC HÀNH <span class="chip">💰 +${fmt(B_PRACTICE)}</span></div>`;
+      h+=`<div class="practice"><div class="ph">✍️ PHÒNG TẬP TÌNH HUỐNG <span class="chip">💰 +${fmt(B_PRACTICE)}</span></div>`;
       s.items.forEach(it=>h+=renderItem(it));
+      h+=`<div class="scenzone" id="scenzone"></div>`;
       h+=`<textarea id="ans" placeholder="Viết câu trả lời / trải nghiệm thật của bạn ở đây... càng cụ thể càng nhiều Berry 💰" oninput="saveAns()">${esc(S.ans[n]||"")}</textarea>
         <div class="saved" id="savedmsg"></div>
         <button class="gradebtn" id="gbtn" onclick="grade(${n})">⚔️ Nộp bài cho Thuyền Trưởng AI chấm điểm</button>
         <div class="scorecard" id="scard"></div>
-        <div class="aiwarn" id="aiwarn"></div></div>`;
+        <div class="aiwarn" id="aiwarn"></div>
+        <div class="lhist" id="lhist"></div></div>`;
     } else {
       h+=`<div class="sec">`;
       if(s.h) h+=`<div class="sec-h">${secEm(s.h)} ${esc(s.h)}</div>`;
@@ -488,6 +568,8 @@ function openLesson(n){
   const scr=S.scores[n];
   if(scr) showScore(scr);
   updateAiWarn();
+  renderScenario(n);
+  renderLessonHistory(n);
   show("lesson");window.scrollTo(0,0);
 }
 function secEm(h){
@@ -526,20 +608,29 @@ async function grade(n){
   const l=LESSONS[n];
   const ps=l.sections.find(s=>s.practice);
   const prompt=ps?ps.items.map(i=>i.t).join("\n").slice(0,800):"";
+  const sco=S.scen[n]; const scen=sco?((sco.body||sco)+(sco.question?" "+sco.question:"")):"";
   let res=null;
   const key=getKey();
   if(key){
-    try{ res=await gradeGemini(key,l,prompt,ans) }catch(e){ console.warn(e); }
+    try{ res=await gradeGemini(key,l,prompt,ans,scen) }catch(e){ console.warn(e); }
   }
   if(!res) res=gradeOffline(ans);
-  S.scores[n]=res; 
+  S.scores[n]=res;
+  // lưu vào lịch sử luyện tập (không ghi đè — mỗi lần luyện là 1 bản ghi)
+  S.history[n]=S.history[n]||[];
+  S.history[n].unshift({ts:Date.now(),scenario:scen,answer:ans,score:res.score,feedback:res.feedback,tip:res.tip,by:res.by});
+  if(S.history[n].length>50) S.history[n]=S.history[n].slice(0,50);
+  S.practices=(S.practices||0)+1;
   let earn=0;
-  if(!S.graded[n]){ earn=B_PRACTICE+res.score*B_SCORE; S.bounty+=earn; S.graded[n]=1 }
-  save(); showScore(res);
-  btn.disabled=false;btn.textContent="⚔️ Chấm lại bài";
+  if(!S.graded[n]){ earn=B_PRACTICE+res.score*B_SCORE; S.graded[n]=1 }
+  else { earn=Math.round(res.score*B_SCORE*0.5) } // luyện lại vẫn có thưởng để duy trì thói quen
+  S.bounty+=earn;
+  save(); showScore(res); renderLessonHistory(n);
+  btn.disabled=false;btn.textContent="⚔️ Nộp bài luyện tập lần nữa";
   if(earn>0) toast("💰 +"+fmt(earn)+" Berry tiền thưởng!");
 }
-async function gradeGemini(key,l,prompt,ans){
+async function gradeGemini(key,l,prompt,ans,scen){
+  const scenLine=scen?`\nTÌNH HUỐNG ĐANG LUYỆN: ${scen.slice(0,700)}\n(Hãy chấm dựa trên việc học viên xử lý tình huống này tốt đến đâu.)`:"";
   const body={
     contents:[{parts:[{text:
 `Bạn là "Thuyền Trưởng AI" — huấn luyện viên EQ nghiêm khắc nhưng ấm áp, nói giọng hào sảng kiểu thuyền trưởng hải tặc (xưng "ta", gọi học viên là "thuyền viên"), tiếng Việt.
@@ -547,7 +638,7 @@ Chấm bài thực hành EQ dưới đây theo 4 tiêu chí: (1) mức độ t�
 
 BÀI HỌC: ${l.title}
 MỤC TIÊU: ${l.objectives.join("; ")}
-YÊU CẦU THỰC HÀNH: ${prompt}
+YÊU CẦU THỰC HÀNH: ${prompt}${scenLine}
 BÀI LÀM CỦA HỌC VIÊN: """${ans.slice(0,2500)}"""
 
 Trả về DUY NHẤT JSON: {"score": <0-100>, "feedback": "<3-4 câu nhận xét cụ thể giọng thuyền trưởng>", "tip": "<1 gợi ý luyện tập tiếp>"}`}]}],
@@ -586,6 +677,174 @@ function showScore(res){
     <div class="fb">${esc(res.feedback)}</div>${res.tip?`<div class="tip">💡 ${esc(res.tip)}</div>`:""}`;
 }
 
+/* ===== PHÒNG TẬP TÌNH HUỐNG (AI SCENARIOS) ===== */
+function renderScenario(n){
+  const z=document.getElementById("scenzone"); if(!z) return;
+  const sc=S.scen[n];
+  if(!sc){
+    z.innerHTML=`<div class="genrow"><button class="genbtn" id="genbtn" onclick="genScenario(${n})">🎲 Nhận tình huống thực tế để luyện</button></div>`;
+    return;
+  }
+  z.innerHTML=`<div class="scencard">
+    <span class="stag">🎯 TÌNH HUỐNG THỰC HÀNH</span>
+    <div class="sbody">${esc(sc.body||sc)}</div>
+    ${sc.question?`<div class="squest">👉 ${esc(sc.question)}</div>`:""}
+    <button class="sre" onclick="genScenario(${n})">🎲 Đổi tình huống khác</button>
+  </div>`;
+}
+async function genScenario(n){
+  const z=document.getElementById("scenzone"); if(!z) return;
+  z.innerHTML=`<div class="sload"><span class="sp"></span> Thuyền Trưởng đang dựng tình huống cho ngươi...</div>`;
+  const l=LESSONS[n]; const key=getKey();
+  let sc=null;
+  if(key){ try{ sc=await scenarioGemini(key,l) }catch(e){ console.warn(e) } }
+  if(!sc) sc=scenarioOffline(l);
+  S.scen[n]=sc; save(); renderScenario(n);
+  const ta=document.getElementById("ans"); if(ta&&!ta.value) ta.focus();
+}
+async function scenarioGemini(key,l){
+  const prompt=`Bạn là "Thuyền Trưởng AI" của EQ GYM. Hãy tạo MỘT tình huống đời thực (ở nhà, nơi làm việc, hoặc trong các mối quan hệ) NGẮN GỌN 2-4 câu, sát với chủ đề bài học bên dưới, để học viên luyện phản ứng cảm xúc (EQ). Kèm đúng 1 câu hỏi thực hành yêu cầu học viên viết cách họ sẽ suy nghĩ / cảm nhận / phản ứng. Viết ngôi thứ hai ("bạn"), gần gũi, cụ thể.
+Chủ đề bài học: ${l.title}
+Mục tiêu: ${(l.objectives&&l.objectives.join("; "))||l.subtitle||""}
+Trả về DUY NHẤT JSON: {"body":"<tình huống 2-4 câu>","question":"<1 câu hỏi thực hành>"}`;
+  const body={contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:1.0,responseMimeType:"application/json"}};
+  const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+encodeURIComponent(key),
+    {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  const j=await r.json(); const o=JSON.parse(j.candidates[0].content.parts[0].text);
+  return {body:o.body||"",question:o.question||""};
+}
+const SCEN_BANK={
+  0:[
+    {body:"Bạn vừa quyết định bắt đầu một hành trình rèn luyện bản thân, nhưng một phần trong bạn nghi ngờ: 'Liệu mình có kiên trì nổi không?'",question:"Điều gì thật sự khiến bạn muốn bắt đầu, và bạn sẽ tự nhắc mình điều đó thế nào khi muốn bỏ cuộc?"},
+    {body:"Cuối ngày, bạn nhìn lại và thấy mình đã phản ứng nóng nảy với một người thân vì chuyện nhỏ.",question:"Nếu được quay lại khoảnh khắc đó, bạn muốn mình đã dừng lại và làm gì khác?"}
+  ],
+  1:[
+    {body:"Trong cuộc họp, sếp phê bình công việc của bạn trước mặt cả nhóm. Mặt bạn nóng bừng, tim đập nhanh.",question:"Ngay lúc đó bạn đang cảm thấy chính xác cảm xúc gì, và nhu cầu nào bên dưới cảm xúc ấy?"},
+    {body:"Bạn mở điện thoại thấy tin nhắn của một người bạn thân đọc xong nhưng không trả lời bạn suốt hai ngày.",question:"Hãy gọi tên cảm xúc của bạn và viết ra câu chuyện mà tâm trí bạn đang tự kể về việc đó."},
+    {body:"Sáng nay bạn thức dậy với cảm giác nặng nề, chẳng muốn làm gì, dù không có chuyện gì tệ xảy ra.",question:"Nếu lắng nghe cơ thể và cảm xúc mình lúc này, chúng đang muốn nói với bạn điều gì?"},
+    {body:"Bạn vừa hoàn thành một việc khó và ai đó khen bạn, nhưng bạn lại thấy bối rối, khó đón nhận lời khen.",question:"Cảm xúc thật của bạn khi được khen là gì, và điều đó tiết lộ gì về cách bạn nhìn bản thân?"}
+  ],
+  2:[
+    {body:"Bạn đang kẹt xe, đã trễ giờ, và người phía sau liên tục bấm còi inh ỏi. Bạn cảm thấy cơn giận trào lên.",question:"Bạn sẽ dùng cách nào để làm dịu cơn sóng cảm xúc này ngay tại chỗ, trước khi nó điều khiển bạn?"},
+    {body:"Một đồng nghiệp nói một câu châm chọc khiến bạn tức điên. Bạn chuẩn bị buông lời đáp trả gay gắt.",question:"Trước khi phản ứng, bạn sẽ tự hỏi mình câu gì để chọn cách đáp lại khôn ngoan hơn?"},
+    {body:"Kế hoạch quan trọng của bạn đổ bể vào phút chót vì lý do ngoài tầm kiểm soát. Bạn thấy thất vọng và muốn bỏ cuộc.",question:"Bạn sẽ tự nói với mình điều gì để đứng dậy, và bước nhỏ tiếp theo bạn có thể làm là gì?"},
+    {body:"Bạn nhận ra mình đã cả buổi tối lướt điện thoại để trốn tránh một cảm xúc khó chịu.",question:"Cảm xúc bạn đang né tránh là gì, và cách lành mạnh nào bạn có thể chọn để đối diện với nó?"}
+  ],
+  3:[
+    {body:"Người thân chia sẻ với bạn một nỗi buồn, nhưng bạn lại vội đưa lời khuyên và họ có vẻ khép lại.",question:"Nếu quay lại, bạn sẽ lắng nghe và đáp lại thế nào để họ cảm thấy thật sự được thấu hiểu?"},
+    {body:"Bạn và một người quan trọng đang bất đồng gay gắt. Cả hai đều muốn mình đúng.",question:"Bạn có thể nói câu gì để hạ nhiệt và cho thấy bạn quan tâm tới mối quan hệ hơn là thắng thua?"},
+    {body:"Một người bạn nhờ vả bạn điều mà bạn không muốn làm, nhưng bạn sợ từ chối sẽ làm họ buồn.",question:"Bạn sẽ đặt ranh giới và nói lời từ chối thế nào vừa chân thành vừa tôn trọng cả hai?"},
+    {body:"Bạn nhận ra mình vừa làm tổn thương ai đó bằng lời nói vô tâm.",question:"Bạn sẽ chủ động sửa chữa và xin lỗi ra sao để hàn gắn mối quan hệ ấy?"}
+  ]
+};
+function scenarioOffline(l){
+  const bank=SCEN_BANK[l.module]||SCEN_BANK[1];
+  const s=bank[Math.floor(Math.random()*bank.length)];
+  return {body:s.body,question:s.question};
+}
+/* ===== LỊCH SỬ LUYỆN TẬP (mỗi đảo) ===== */
+function fmtDate(ts){ try{ const d=new Date(ts); return d.toLocaleDateString("vi-VN")+" "+d.toLocaleTimeString("vi-VN",{hour:"2-digit",minute:"2-digit"}); }catch(e){ return ""; } }
+function clip(s,n){ s=s||""; return s.length>n? s.slice(0,n)+"…" : s; }
+function renderLessonHistory(n){
+  const z=document.getElementById("lhist"); if(!z) return;
+  const h=S.history[n]||[];
+  if(!h.length){ z.innerHTML=""; return; }
+  let html=`<div class="hh">📈 LỊCH SỬ LUYỆN TẬP ĐẢO NÀY (${h.length})</div>`;
+  h.forEach(it=>{
+    html+=`<div class="hnode">
+      <div class="hmeta"><span class="hsc">★ ${it.score}/100</span><span>${it.by==="ai"?"🤖 AI":"⚖️ offline"}</span><span>${fmtDate(it.ts)}</span></div>
+      ${it.scenario?`<div class="hscn">🎯 ${esc(clip(it.scenario,160))}</div>`:""}
+      <div class="hans">${esc(clip(it.answer,400))}</div>
+      ${it.feedback?`<div class="hfb">🧭 ${esc(clip(it.feedback,300))}</div>`:""}
+    </div>`;
+  });
+  z.innerHTML=html;
+}
+/* ===== TRỢ LÝ THUYỀN TRƯỞNG AI (CHAT) ===== */
+let COURSE_MAP=null;
+function courseMap(){
+  if(COURSE_MAP) return COURSE_MAP;
+  COURSE_MAP=LESSONS.map(l=>{
+    const o=(l.objectives&&l.objectives.length)?" | Mục tiêu: "+l.objectives.join("; "):"";
+    return `Đảo ${l.n}: ${l.title}${o}`;
+  }).join("\n");
+  return COURSE_MAP;
+}
+function progressSummary(){
+  const d=S.done.length, r=rankOf(d);
+  const sc=Object.values(S.scores).map(x=>x.score);
+  const avg=sc.length?Math.round(sc.reduce((a,b)=>a+b,0)/sc.length):null;
+  const nextN=[...Array(30).keys()].find(n=>!isDone(n));
+  return `Cấp bậc: ${r[1]}. Đã chinh phục ${d}/30 đảo. Chuỗi ngày ra khơi: ${S.streak}. Điểm TB: ${avg??"chưa có"}. Đảo tiếp theo nên học: ${nextN!=null?("Đảo "+nextN+" - "+LESSONS[nextN].title):"đã xong hết 30 đảo"}.`;
+}
+const QUICK=["Hôm nay mình nên luyện đảo nào?","Cho mình 1 tình huống để luyện EQ","Mình đang căng thẳng, giúp mình với","Làm sao giữ thói quen luyện mỗi ngày?"];
+function bubHtml(m){
+  if(m.role==="user") return `<div class="bub me">${esc(m.text)}</div>`;
+  return `<div class="bub ai"><span class="cap">🧭 THUYỀN TRƯỞNG</span>${esc(m.text)}</div>`;
+}
+function renderChat(){
+  const box=document.getElementById("cmsgs"); if(!box) return;
+  const qc=document.getElementById("qchips");
+  if(!S.chat.length){
+    box.innerHTML=`<div class="bub ai"><span class="cap">🧭 THUYỀN TRƯỞNG AI</span>Chào thuyền viên! Ta là Thuyền Trưởng AI — người đồng hành trên hải trình EQ của ngươi. Ta thuộc lòng cả 30 hòn đảo trong chương trình này. Ngươi có thể hỏi ta về bài học, xin một tình huống để luyện, hay kể cho ta nghe chuyện đang khiến ngươi bối rối. Bắt đầu từ đâu nào? ⚓</div>`;
+  } else {
+    box.innerHTML=S.chat.map(m=>bubHtml(m)).join("");
+  }
+  qc.innerHTML=QUICK.map((q,i)=>`<div class="qchip" onclick="quickAsk(${i})">${esc(q)}</div>`).join("");
+  document.getElementById("cstatus").textContent=getKey()?"🟢 Gemini đang bật · đồng hành hải trình EQ":"⚪ Đang ở chế độ offline · bấm ⚙️ để bật AI";
+  box.scrollTop=box.scrollHeight;
+}
+function autoGrow(t){ t.style.height="auto"; t.style.height=Math.min(120,t.scrollHeight)+"px"; }
+function quickAsk(i){ const ta=document.getElementById("cinput"); ta.value=QUICK[i]; sendChat(); }
+async function sendChat(){
+  const ta=document.getElementById("cinput");
+  const text=(ta.value||"").trim(); if(!text) return;
+  ta.value=""; autoGrow(ta);
+  S.chat.push({role:"user",text}); save();
+  const box=document.getElementById("cmsgs");
+  box.innerHTML=S.chat.map(m=>bubHtml(m)).join("")+`<div class="bub ai" id="typing"><span class="cap">🧭 THUYỀN TRƯỞNG</span><span class="typing"><i></i><i></i><i></i></span></div>`;
+  box.scrollTop=box.scrollHeight;
+  document.getElementById("csend").disabled=true;
+  let reply=null; const key=getKey();
+  if(key){ try{ reply=await assistantGemini(key) }catch(e){ console.warn(e) } }
+  if(!reply) reply=assistantOffline(text);
+  S.chat.push({role:"model",text:reply});
+  if(S.chat.length>60) S.chat=S.chat.slice(-60);
+  save();
+  document.getElementById("csend").disabled=false;
+  renderChat();
+}
+async function assistantGemini(key){
+  const sys=`Bạn là "Thuyền Trưởng AI" của ứng dụng EQ GYM — huấn luyện viên trí tuệ cảm xúc (EQ) nói tiếng Việt, giọng hào sảng ấm áp kiểu thuyền trưởng hải tặc One Piece (xưng "ta", gọi người dùng là "thuyền viên"), nhưng luôn thực tế, cụ thể, đồng cảm và không sáo rỗng.
+Nhiệm vụ: giúp thuyền viên HỌC và THỰC HÀNH EQ hiệu quả mỗi ngày, hướng tới sự chuyển hóa thật. Bám sát nội dung 30 đảo của chương trình. Khi hợp lý: gợi ý đảo cụ thể để học/luyện, đưa một bài tập nhỏ hoặc một tình huống để luyện, và khích lệ duy trì thói quen. Trả lời NGẮN GỌN (3-6 câu), ấm áp, dễ áp dụng. Nếu người dùng đang xúc động, hãy công nhận cảm xúc trước rồi mới khuyên. Không bịa nội dung ngoài chương trình.
+
+BẢN ĐỒ 30 ĐẢO EQ GYM:
+${courseMap()}
+
+TIẾN ĐỘ HIỆN TẠI CỦA THUYỀN VIÊN: ${progressSummary()}`;
+  const contents=S.chat.slice(-16).map(m=>({role:m.role==="user"?"user":"model",parts:[{text:m.text}]}));
+  const body={systemInstruction:{parts:[{text:sys}]},contents,generationConfig:{temperature:0.9}};
+  const r=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+encodeURIComponent(key),
+    {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error("HTTP "+r.status);
+  const j=await r.json();
+  return j.candidates[0].content.parts.map(p=>p.text).join("").trim();
+}
+function assistantOffline(text){
+  const t=text.toLowerCase();
+  const nextN=[...Array(30).keys()].find(n=>!isDone(n));
+  const nx=nextN!=null?("Đảo "+nextN+" — "+LESSONS[nextN].title):"đã chinh phục hết 30 đảo";
+  if(/đảo nào|học gì|bắt đầu|hôm nay|nên luyện/.test(t))
+    return `Hô hô! Hôm nay ngươi nên ra khơi tới ${nx}, thuyền viên. Mở bản đồ hải trình → bấm vào đảo đó → xem video → làm phần Phòng Tập Tình Huống. Chỉ 5-7 phút thôi mà cơ bắp cảm xúc lớn lên mỗi ngày. (💡 Thêm API key Gemini miễn phí ở mục ⚙️ để ta trò chuyện sâu hơn với ngươi.)`;
+  if(/căng thẳng|stress|lo|buồn|giận|mệt|áp lực|tức/.test(t))
+    return `Ta nghe thấy rồi, thuyền viên. Khi sóng lớn, đừng chống — hãy thở: hít 4 nhịp, giữ 4 nhịp, thở ra 6 nhịp, làm 3 lần. Rồi gọi tên cảm xúc: "Mình đang thấy ___ vì ___". Chỉ gọi tên thôi đã làm cơn sóng dịu đi một nửa. (💡 Bật API key Gemini ở ⚙️ để ta đồng hành kỹ hơn.)`;
+  if(/tình huống|luyện|thực hành|bài tập/.test(t))
+    return `Muốn luyện thì mở một đảo bất kỳ, kéo tới Phòng Tập Tình Huống rồi bấm 🎲 — ta sẽ dựng cho ngươi một tình huống đời thực để phản ứng và chấm điểm. (💡 Bật API key Gemini ở ⚙️ để tình huống phong phú và chấm sâu hơn.)`;
+  return `Ta luôn ở đây trên đài chỉ huy, thuyền viên. Để ta trò chuyện thật sâu và cá nhân hóa, hãy thêm API key Gemini (miễn phí) ở mục ⚙️ AI. Còn bây giờ: cứ ra khơi tới ${nx} và luyện đều mỗi ngày — đó là cách cơ bắp cảm xúc lớn lên.`;
+}
+function clearChat(){ if(confirm("Xóa toàn bộ hội thoại với Thuyền Trưởng AI?")){ S.chat=[]; save(); renderChat(); } }
+
 /* ===== COMPLETE / TREASURE ===== */
 function complete(n){
   if(isDone(n)){window.scrollTo(0,0);return}
@@ -619,17 +878,39 @@ function goHome(){renderHome();show("home");tabHi("home");window.scrollTo(0,0)}
 
 /* ===== JOURNAL ===== */
 function renderJournal(){
-  let h="",any=false;
+  const body=document.getElementById("jbody");
+  let entries=[];
   LESSONS.forEach(l=>{
-    const a=S.ans[l.n];
-    if(a&&a.trim()){any=true;
+    (S.history[l.n]||[]).forEach(it=>entries.push(Object.assign({n:l.n,title:l.title},it)));
+  });
+  // Bài cũ chỉ có câu trả lời (trước khi có lịch sử) — vẫn hiển thị
+  LESSONS.forEach(l=>{
+    if((!S.history[l.n]||!S.history[l.n].length) && S.ans[l.n] && S.ans[l.n].trim()){
       const scr=S.scores[l.n];
-      h+=`<div class="jitem">${scr?'<span class="jsc">★ '+scr.score+'/100</span>':''}<h4>🏝️ Đảo ${l.n} · ${esc(l.title)}</h4><p>${esc(a)}</p>
-      ${scr?'<div class="qt" style="margin-top:7px">🤖 '+esc(scr.feedback)+'</div>':''}</div>`;
+      entries.push({n:l.n,title:l.title,ts:0,answer:S.ans[l.n],scenario:"",score:scr?scr.score:null,feedback:scr?scr.feedback:"",by:scr?scr.by:""});
     }
   });
-  document.getElementById("jbody").innerHTML=any?h:
-    `<div class="empty"><div class="em">📜</div><p>Nhật ký còn trống.<br>Làm thử thách thực hành trên mỗi đảo để ghi lại hải trình nhé!</p></div>`;
+  entries.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  if(!entries.length){
+    body.innerHTML=`<div class="empty"><div class="em">📜</div><p>Nhật ký còn trống.<br>Làm thử thách thực hành trên mỗi đảo để ghi lại hải trình nhé!</p></div>`;
+    return;
+  }
+  const scores=entries.map(e=>e.score).filter(x=>x!=null);
+  const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):"—";
+  const best=scores.length?Math.max.apply(null,scores):"—";
+  let h=`<div class="statrow" style="margin-top:6px">
+    <div class="stat"><b>${entries.length}</b><span>Lần luyện tập</span></div>
+    <div class="stat"><b>${avg}</b><span>Điểm trung bình</span></div>
+    <div class="stat"><b>${best}</b><span>Điểm cao nhất</span></div></div>`;
+  entries.forEach(e=>{
+    h+=`<div class="jitem">${e.score!=null?'<span class="jsc">★ '+e.score+'/100</span>':''}
+      <h4>🏝️ Đảo ${e.n} · ${esc(e.title)}</h4>
+      ${e.ts?'<div class="qt">🕑 '+fmtDate(e.ts)+(e.by==="ai"?" · 🤖 AI":e.by?" · ⚖️ offline":"")+'</div>':''}
+      ${e.scenario?'<div class="qt" style="color:#8fd4ff;font-style:italic">🎯 '+esc(clip(e.scenario,180))+'</div>':''}
+      <p>${esc(e.answer)}</p>
+      ${e.feedback?'<div class="qt" style="margin-top:7px">🧭 '+esc(e.feedback)+'</div>':''}</div>`;
+  });
+  body.innerHTML=h;
 }
 
 /* ===== SETTINGS ===== */
@@ -648,14 +929,13 @@ function clearKey(){try{localStorage.removeItem("eqgym_gemini_key")}catch(e){};c
 
 /* ===== UTIL ===== */
 function show(id){document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));document.getElementById(id).classList.add("on")}
-function tab(id){if(id==="home"){renderHome()}else{renderJournal()}show(id);tabHi(id);window.scrollTo(0,0)}
-function tabHi(id){document.getElementById("nav-home").classList.toggle("on",id==="home");
-  document.getElementById("nav-journal").classList.toggle("on",id==="journal")}
+function tab(id){if(id==="home"){renderHome()}else if(id==="journal"){renderJournal()}else if(id==="assistant"){renderChat()}show(id);tabHi(id);if(id!=="assistant")window.scrollTo(0,0)}
+function tabHi(id){["home","journal","assistant"].forEach(k=>{const el=document.getElementById("nav-"+k);if(el)el.classList.toggle("on",id===k)})}
 function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
 function toast(t){const e=document.getElementById("toast");e.textContent=t;e.classList.add("show");
   clearTimeout(window._tt);window._tt=setTimeout(()=>e.classList.remove("show"),2400)}
 function resetAll(){if(confirm("Đặt lại toàn bộ hải trình, Berry và nhật ký? Không thể hoàn tác.")){
-  S={done:[],ans:{},scores:{},graded:{},streak:0,last:null,bounty:0};save();renderHome();toast("⚓ Hải trình mới bắt đầu!")}}
+  S={done:[],ans:{},scores:{},graded:{},streak:0,last:null,bounty:0,history:{},chat:[],scen:{},practices:0};save();renderHome();toast("⚓ Hải trình mới bắt đầu!")}}
 function berryRain(){
   const c=document.createElement("div");c.className="confetti";document.body.appendChild(c);
   const ems=["💰","🪙","⭐","💎","🏴‍☠️"];
