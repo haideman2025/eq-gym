@@ -295,7 +295,53 @@ h1,h2,h3{font-weight:800}
 .scencard .stag.ref{color:#c9b3ff;background:rgba(167,139,250,.14);border-color:rgba(167,139,250,.35)}
 .dchips{display:inline-flex;gap:6px;margin-left:auto}
 .dchips span{font-size:10px;color:#9fb3d6;background:#132a52;border:1px solid var(--line);border-radius:6px;padding:1px 5px;font-weight:700}
+/* ===== TRẮC NGHIỆM EQ ===== */
+.qintro{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 16px;margin:6px 0 14px;box-shadow:var(--sh)}
+.qintro h3{margin:0 0 6px;font-size:18px}
+.qintro p{margin:6px 0;font-size:13.5px;color:var(--mut);line-height:1.6}
+.qprog{position:sticky;top:0;z-index:20;background:rgba(6,15,30,.92);backdrop-filter:blur(8px);padding:10px 0;margin-bottom:6px}
+.qprog .bar{height:8px;border-radius:6px;background:var(--card2);overflow:hidden;border:1px solid var(--line)}
+.qprog .bar i{display:block;height:100%;background:linear-gradient(90deg,#37d399,#3fb9f6);transition:width .3s}
+.qprog .lab{font-size:11.5px;color:var(--mut);margin-top:5px;text-align:center}
+.qitem{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:11px}
+.qitem.answered{border-color:rgba(55,211,153,.4)}
+.qitem .qtx{font-size:14.5px;line-height:1.5;margin-bottom:10px}
+.qitem .qtx b{color:var(--gold);font-weight:800;margin-right:5px}
+.qscale{display:flex;gap:6px}
+.qscale button{flex:1;border:1px solid var(--line);background:var(--card2);color:var(--mut);border-radius:10px;
+  padding:9px 0;font-size:15px;font-weight:800;cursor:pointer;transition:.15s}
+.qscale button.sel{background:linear-gradient(135deg,#37d399,#2bb3d6);color:#052018;border-color:transparent;transform:scale(1.04)}
+.qscale .lbl{display:flex;justify-content:space-between;font-size:9.5px;color:var(--mut);margin-top:5px}
+/* kết quả */
+.qres{text-align:center;padding:6px 0}
+.qres .big{width:120px;height:120px;margin:8px auto 4px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 35% 30%,#e8a820,#b3720b);border:4px solid #8a6a35;box-shadow:0 10px 30px rgba(232,168,32,.35)}
+.qres .big b{font-size:38px;line-height:1;color:#fff}
+.qres .big span{font-size:11px;color:#ffe9bf}
+.qres .band{font-size:20px;font-weight:900;color:var(--gold);margin-top:6px}
+.qres .sum{font-size:13.5px;color:#dbe6fb;margin:6px auto;max-width:440px;line-height:1.6}
+.lockrep{position:relative;margin-top:14px;border-radius:16px;overflow:hidden;border:1px solid var(--line)}
+.lockrep .blur{filter:blur(6px);opacity:.5;pointer-events:none;padding:14px}
+.lockrep .ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  background:rgba(6,15,30,.55);text-align:center;padding:18px}
+.lockrep .ov b{font-size:15px}.lockrep .ov p{font-size:12.5px;color:var(--mut);margin:0;max-width:280px}
+/* ===== AUTH / TÀI KHOẢN ===== */
+.authbox{margin-top:6px}
+.authbox .who{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13px;margin-bottom:12px}
+.authbox .who b{color:var(--gold)}
+.prem-badge{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:999px;margin-left:6px}
+.prem-badge.on{background:linear-gradient(135deg,#f5c542,#e8a820);color:#241a05}
+.prem-badge.off{background:var(--card2);color:var(--mut);border:1px solid var(--line)}
+.premcta{background:linear-gradient(155deg,#2a1e46,#1a2f56);border:1px solid #6d4bd4;border-radius:18px;padding:18px 16px;margin:8px 0}
+.premcta h3{margin:0 0 4px;font-size:19px;color:var(--gold)}
+.premcta .price{font-size:26px;font-weight:900;color:#fff;margin:6px 0}
+.premcta .price small{font-size:13px;color:var(--mut);font-weight:600}
+.premcta ul{margin:10px 0;padding-left:2px;list-style:none}
+.premcta li{font-size:13.5px;padding:4px 0;display:flex;gap:8px}
+.premcta li:before{content:"✅";flex:0 0 auto}
+.premcta .limit{font-size:12px;color:#ffcf8f;background:rgba(245,197,66,.12);border:1px dashed #b08d4f;border-radius:10px;padding:8px 11px;margin-top:6px}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -372,16 +418,26 @@ h1,h2,h3{font-weight:800}
   </div>
 </div>
 
+<div id="quiz" class="view">
+  <div class="hero">
+    <div class="brand"><span class="flag">📝</span><div><h1>Trắc Nghiệm <span>EQ</span></h1><p>Đo chỉ số cảm xúc theo 4 trụ cột EQ GYM</p></div></div>
+  </div>
+  <div class="wrap" id="qbody"></div>
+</div>
+
 <div class="nav">
   <a id="nav-home" class="on" onclick="tab('home')"><span class="ic">🗺️</span>Hải trình</a>
+  <a id="nav-quiz" onclick="tab('quiz')"><span class="ic">📝</span>Test EQ</a>
   <a id="nav-journal" onclick="tab('journal')"><span class="ic">📜</span>Nhật ký</a>
   <a id="nav-assistant" onclick="tab('assistant')"><span class="ic">🧭</span>Trợ lý</a>
-  <a id="nav-set" onclick="openSettings()"><span class="ic">⚙️</span>AI</a>
+  <a id="nav-set" onclick="openSettings()"><span class="ic">⚙️</span>Tài khoản</a>
 </div>
 
 <div class="modal" id="setmodal" onclick="if(event.target===this)closeSettings()">
   <div class="sheet">
-    <h3>⚙️ Thuyền Trưởng AI (Gemini)</h3>
+    <h3>👤 Tài khoản</h3>
+    <div id="acctbox"></div>
+    <h3 style="margin-top:4px">🤖 Thuyền Trưởng AI (Gemini)</h3>
     <p class="mut">Dán <b>API key Google Gemini</b> (miễn phí) để AI chấm điểm bài thực hành và nhận xét cá nhân hóa.
     Lấy key tại <b>aistudio.google.com/apikey</b> → "Create API key". Key chỉ lưu trên máy bạn.</p>
     <input type="password" id="apikey" placeholder="Dán API key vào đây (AIza...)">
@@ -389,6 +445,33 @@ h1,h2,h3{font-weight:800}
     <button class="btn ghost" onclick="clearKey()" style="margin-top:10px">Xóa key · dùng chấm offline</button>
     <p class="mut" style="margin-top:12px;font-size:11.5px" id="keystatus"></p>
   </div>
+</div>
+
+<div class="modal" id="premmodal" onclick="if(event.target===this)closePremium()">
+  <div class="sheet">
+    <div class="premcta">
+      <h3>🏴‍☠️ EQ GYM Premium</h3>
+      <div class="price">999.000đ <small>/ năm</small></div>
+      <ul>
+        <li>Mở khóa toàn bộ 30 đảo học &amp; luyện tập</li>
+        <li>Thuyền Trưởng AI chấm điểm 4 trụ &amp; tình huống không giới hạn</li>
+        <li>Tham gia cộng đồng rèn luyện EQ GYM</li>
+        <li>Tặng sách EQ Workbook (50 thành viên đầu tiên)</li>
+      </ul>
+      <div class="limit">🎁 Ưu đãi có hạn: 50 thành viên đầu tiên được tặng sách EQ Workbook.</div>
+    </div>
+    <button class="btn" onclick="startCheckout()">Nâng cấp ngay</button>
+    <button class="btn ghost" style="margin-top:10px" onclick="closePremium()">Để sau</button>
+  </div>
+</div>
+
+<div class="modal" id="paymodal" onclick="if(event.target===this)closePay()">
+  <div class="sheet" id="paysheet"></div>
+</div>
+
+<div id="admin" class="view">
+  <div class="hero"><div class="brand"><span class="flag">🛡️</span><div><h1>Admin <span>Duyệt</span></h1><p>Xác nhận thanh toán Premium</p></div></div></div>
+  <div class="wrap" id="adminbody"></div>
 </div>
 
 <div class="treasure" id="treasure">
@@ -402,6 +485,19 @@ h1,h2,h3{font-weight:800}
 <div class="toast" id="toast"></div>
 
 <script>
+
+/* ================================================================
+   ☁️ CẤU HÌNH BACKEND (SUPABASE) — DÁN 2 GIÁ TRỊ NÀY ĐỂ BẬT TÀI KHOẢN
+   Lấy tại: Supabase → Project Settings → API
+   Khi để trống: app chạy "chế độ local" (như cũ, lưu trên máy, mở khóa tất cả).
+   Khi điền đủ: bật đăng ký/đăng nhập, đồng bộ dữ liệu theo tài khoản, khóa Premium.
+   Xem hướng dẫn: docs/SETUP-SUPABASE.md
+   ================================================================ */
+const SUPA_URL="";   // ← dán Supabase Project URL (https://xxxx.supabase.co)
+const SUPA_ANON="";  // ← dán Supabase anon public key (eyJ...)
+const BACKEND=!!(SUPA_URL && SUPA_ANON && window.supabase);
+let sb=BACKEND ? window.supabase.createClient(SUPA_URL,SUPA_ANON) : null;
+let AUTH=null;       // hồ sơ user đang đăng nhập (gồm premium_until), hoặc null
 
 /* ================================================================
    🎬 VIDEO BÀI HỌC — DÁN LINK TẠI ĐÂY
@@ -474,14 +570,46 @@ function load(){
     return {};
   }catch(e){return _mem}
 }
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){_mem=S}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){_mem=S} scheduleSync();}
+/* ===== ĐỒNG BỘ TÀI KHOẢN (Supabase) — no-op ở chế độ local ===== */
+let _syncT=null;
+function scheduleSync(){ if(!BACKEND||!AUTH) return; clearTimeout(_syncT); _syncT=setTimeout(syncPush,1500); }
+async function syncPush(){ if(!BACKEND||!AUTH) return;
+  try{ await sb.from('progress').upsert({user_id:AUTH.id, done:S.done, bounty:S.bounty, streak:S.streak,
+    last_date:S.last, graded:S.graded, scen:S.scen, updated_at:new Date().toISOString()}); }
+  catch(e){ console.warn('sync progress',e); }
+}
+async function pushPractice(n,rec){ if(!BACKEND||!AUTH) return;
+  try{ await sb.from('practices').insert({user_id:AUTH.id, lesson_n:n, scenario:rec.scenario, answer:rec.answer,
+    dims:rec.dims, score:rec.score, feedback:rec.feedback, tip:rec.tip, by:rec.by}); }
+  catch(e){ console.warn('push practice',e); }
+}
+async function pushAssessment(scores,answers){ if(!BACKEND||!AUTH) return;
+  try{ await sb.from('assessments').insert({user_id:AUTH.id, answers:answers, scores:scores, band:scores.band}); }
+  catch(e){ console.warn('push assessment',e); }
+}
+async function pullRemote(){ if(!BACKEND||!AUTH) return;
+  try{
+    const {data:pg}=await sb.from('progress').select('*').eq('user_id',AUTH.id).maybeSingle();
+    if(pg){ S.done=[...new Set([...(S.done||[]),...(pg.done||[])])];
+      S.bounty=Math.max(S.bounty||0,pg.bounty||0); S.streak=Math.max(S.streak||0,pg.streak||0);
+      S.last=pg.last_date||S.last; S.graded=Object.assign({},S.graded,pg.graded||{}); S.scen=Object.assign({},S.scen,pg.scen||{}); }
+    const {data:pr}=await sb.from('practices').select('*').eq('user_id',AUTH.id).order('created_at',{ascending:false}).limit(500);
+    if(pr){ pr.forEach(r=>{ const ts=new Date(r.created_at).getTime(); S.history[r.lesson_n]=S.history[r.lesson_n]||[];
+      if(!S.history[r.lesson_n].some(h=>Math.abs((h.ts||0)-ts)<2000 && h.score===r.score))
+        S.history[r.lesson_n].push({ts,scenario:r.scenario,answer:r.answer,dims:r.dims,score:r.score,feedback:r.feedback,tip:r.tip,by:r.by}); });
+      Object.keys(S.history).forEach(k=>S.history[k].sort((a,b)=>(b.ts||0)-(a.ts||0))); }
+    save();
+  }catch(e){ console.warn('pullRemote',e); }
+}
 let S=load();
 S.done=S.done||[]; S.ans=S.ans||{}; S.scores=S.scores||{}; S.graded=S.graded||{};
 S.streak=S.streak||0; S.last=S.last||null; S.bounty=S.bounty||0;
 S.history=S.history||{}; S.chat=S.chat||[]; S.scen=S.scen||{}; S.practices=S.practices||0;
+S.quiz=S.quiz||null; S.qans=S.qans||{};
 
 function isDone(n){return S.done.includes(n)}
-function unlocked(n){return n===0||isDone(n-1)}
+function unlocked(n){ if(n===0) return true; if(!isPremium()) return false; return isDone(n-1); }
 function fmt(x){return (x||0).toLocaleString("vi-VN")}
 function rankOf(d){let r=RANKS[0];for(const x of RANKS){if(d>=x[0])r=x}return r}
 function nextRank(d){for(const x of RANKS){if(d<x[0])return x}return null}
@@ -527,7 +655,7 @@ function renderHome(){
       const st=done?"✅":(lock?"🔒":"⛵");
       html+=`<div class="inode ${i%2? "R":"L"}">
         <div class="island ${done?"done":""} ${lock?"locked":""} ${now?"now":""}"
-             onclick="${lock?"lockMsg()":"openLesson("+l.n+")"}">
+             onclick="${lock?"lockMsg("+l.n+")":"openLesson("+l.n+")"}">
           <div class="isle">${em}<span class="no">${l.n}</span></div>
           <div class="iinfo"><b>${esc(l.title)}</b>
             <span>${v?'<span class="tagv">▶ VIDEO</span>':''}${hasP?'<span class="tagp">✍ THỰC HÀNH</span>':''}${scr?'<span class="tagsc">★ '+scr.score+'</span>':''} ⏱ ${esc(l.duration||"5–7 phút")}</span>
@@ -538,7 +666,7 @@ function renderHome(){
   document.getElementById("seamap").innerHTML=html;
   document.getElementById("eqprofile").innerHTML=eqProfileHtml();
 }
-function lockMsg(){toast("🌫️ Vùng biển còn sương mù — chinh phục đảo trước đã, thuyền viên!")}
+function lockMsg(n){ if(BACKEND && !isPremium() && n>=1){ showPremium(); return; } toast("🌫️ Vùng biển còn sương mù — chinh phục đảo trước đã, thuyền viên!"); }
 
 /* ===== VIDEO ===== */
 function ytId(s){
@@ -661,6 +789,7 @@ async function grade(n){
   // lưu vào lịch sử luyện tập (không ghi đè — mỗi lần luyện là 1 bản ghi)
   S.history[n]=S.history[n]||[];
   S.history[n].unshift({ts:Date.now(),scenario:scen,answer:ans,score:res.score,dims:res.dims,feedback:res.feedback,tip:res.tip,by:res.by});
+  pushPractice(n,S.history[n][0]);
   if(S.history[n].length>50) S.history[n]=S.history[n].slice(0,50);
   S.practices=(S.practices||0)+1;
   let earn=0;
@@ -928,6 +1057,107 @@ function eqProfileHtml(){
     <div class="eqp-body">${eqRadarSVG(p.avg)}<div class="eqp-bars">${bars}</div></div>
   </div>`;
 }
+/* ===== TRẮC NGHIỆM EQ (24 câu) ===== */
+const QUIZ=[
+  {id:"q1",pillar:"aware",text:"Tôi thường nhận ra chính xác mình đang cảm thấy gì ngay khi cảm xúc xuất hiện."},
+  {id:"q2",pillar:"aware",text:"Tôi hiểu điều gì (sự kiện, suy nghĩ) đã kích hoạt cảm xúc của mình."},
+  {id:"q3",pillar:"aware",text:"Tôi biết những tình huống dễ khiến mình phản ứng mạnh."},
+  {id:"q4",pillar:"aware",text:"Tôi nhận ra các mô thức phản ứng lặp đi lặp lại của bản thân."},
+  {id:"q5",pillar:"aware",rev:1,text:"Tôi thường bị cảm xúc cuốn đi mà không hiểu vì sao."},
+  {id:"q6",pillar:"aware",text:"Tôi ý thức rõ giá trị và điều thật sự quan trọng với mình."},
+  {id:"q7",pillar:"real",text:"Tôi dám thừa nhận cả những cảm xúc khó chịu của mình thay vì chối bỏ."},
+  {id:"q8",pillar:"real",text:"Tôi ở lại với cảm xúc thật của mình thay vì lảng tránh (ăn, lướt điện thoại, bận rộn…)."},
+  {id:"q9",pillar:"real",rev:1,text:"Tôi hay giả vờ ổn dù bên trong không ổn."},
+  {id:"q10",pillar:"real",text:"Tôi trung thực với chính mình về điểm yếu và sai lầm."},
+  {id:"q11",pillar:"real",text:"Tôi có thể mô tả trải nghiệm của mình một cách cụ thể, chân thực."},
+  {id:"q12",pillar:"real",rev:1,text:"Tôi thường tránh nghĩ sâu về những chuyện làm mình tổn thương."},
+  {id:"q13",pillar:"choice",text:"Khi tức giận hay lo lắng, tôi có cách làm dịu bản thân trước khi hành động."},
+  {id:"q14",pillar:"choice",text:"Tôi chọn cách phản ứng một cách có ý thức thay vì phản xạ theo thói quen."},
+  {id:"q15",pillar:"choice",rev:1,text:"Tôi hay nói/làm điều mình hối tiếc khi cảm xúc dâng cao."},
+  {id:"q16",pillar:"choice",text:"Tôi giữ được bình tĩnh dưới áp lực."},
+  {id:"q17",pillar:"choice",text:"Khi gặp thất bại, tôi đứng dậy và tìm bước tiếp theo thay vì bỏ cuộc."},
+  {id:"q18",pillar:"choice",rev:1,text:"Cảm xúc thường quyết định thay tôi trong những lúc quan trọng."},
+  {id:"q19",pillar:"empath",text:"Tôi nhận ra cảm xúc và nhu cầu của người khác qua lời nói, nét mặt, giọng điệu."},
+  {id:"q20",pillar:"empath",text:"Tôi lắng nghe để hiểu, thay vì vội đưa lời khuyên hay phán xét."},
+  {id:"q21",pillar:"empath",text:"Tôi biết đặt ranh giới mà vẫn tôn trọng người khác."},
+  {id:"q22",pillar:"empath",text:"Tôi chủ động sửa chữa khi làm tổn thương ai đó."},
+  {id:"q23",pillar:"empath",rev:1,text:"Tôi khó đặt mình vào vị trí người khác."},
+  {id:"q24",pillar:"empath",text:"Tôi áp dụng được hiểu biết về cảm xúc vào các mối quan hệ hằng ngày."}
+];
+function eqBand(t){ return t>=80?"Thuyền Trưởng Cảm Xúc":t>=60?"Hoa Tiêu Cảm Xúc":t>=40?"Thủy Thủ Tập Sự":"Tân Binh Cảm Xúc"; }
+function bandEmoji(t){ return t>=80?"👑":t>=60?"🧭":t>=40?"🧑‍🍳":"🧑‍✈️"; }
+function scoreQuiz(ans){
+  const P={aware:[],real:[],choice:[],empath:[]};
+  QUIZ.forEach(q=>{ let v=+ans[q.id]||0; if(!v) return; if(q.rev) v=6-v; P[q.pillar].push(v); });
+  const norm=a=>a.length?Math.round((a.reduce((x,y)=>x+y,0)-a.length)/(a.length*4)*100):0;
+  const s={aware:norm(P.aware),real:norm(P.real),choice:norm(P.choice),empath:norm(P.empath)};
+  s.total=Math.round((s.aware+s.real+s.choice+s.empath)/4); s.band=eqBand(s.total); return s;
+}
+function renderQuiz(){
+  const b=document.getElementById("qbody"); if(!b) return;
+  if(S.quiz){ b.innerHTML=quizResultHtml(S.quiz); return; }
+  let h=`<div class="qintro"><h3>🧭 Đo chỉ số EQ của bạn</h3>
+    <p>24 câu ngắn, thang 5 mức (1 = không đúng với tôi → 5 = rất đúng). Trả lời thật lòng, không có đúng/sai. Mất khoảng 3–4 phút.</p>
+    <p>Kết quả chấm theo <b>4 trụ cột EQ GYM</b>: Nhận thức · Chân thật & Hiện diện · Làm chủ & Lựa chọn · Thấu cảm & Kết nối.</p></div>`;
+  h+=`<div class="qprog"><div class="bar"><i id="qfill" style="width:0%"></i></div><div class="lab" id="qlab">0/${QUIZ.length} câu</div></div>`;
+  QUIZ.forEach((q,i)=>{ const cur=S.qans[q.id];
+    h+=`<div class="qitem${cur?" answered":""}" id="qi-${q.id}"><div class="qtx"><b>${i+1}.</b>${esc(q.text)}</div>
+      <div class="qscale">`+[1,2,3,4,5].map(v=>`<button class="${cur==v?"sel":""}" onclick="ansQuiz('${q.id}',${v})">${v}</button>`).join("")+`</div>
+      <div class="lbl"><span>Không đúng</span><span>Rất đúng</span></div></div>`;
+  });
+  h+=`<div class="cta"><button class="btn" id="qsubmit" onclick="submitQuiz()">Xem kết quả EQ của tôi ›</button></div>
+    <div class="reset" style="margin-top:6px"><button onclick="clearQuizProgress()">Xóa & làm lại từ đầu</button></div>`;
+  b.innerHTML=h; updateQuizProg();
+}
+function ansQuiz(id,v){ S.qans[id]=v; save();
+  const it=document.getElementById("qi-"+id);
+  if(it){ it.classList.add("answered"); it.querySelectorAll(".qscale button").forEach((btn,i)=>btn.classList.toggle("sel",i+1===v)); }
+  updateQuizProg();
+}
+function updateQuizProg(){ const n=QUIZ.filter(q=>S.qans[q.id]).length;
+  const f=document.getElementById("qfill"); if(f) f.style.width=Math.round(n/QUIZ.length*100)+"%";
+  const l=document.getElementById("qlab"); if(l) l.textContent=n+"/"+QUIZ.length+" câu";
+}
+function clearQuizProgress(){ if(confirm("Xóa các câu đã chọn và làm lại từ đầu?")){ S.qans={}; save(); renderQuiz(); } }
+function submitQuiz(){
+  const n=QUIZ.filter(q=>S.qans[q.id]).length;
+  if(n<QUIZ.length){ const first=QUIZ.find(q=>!S.qans[q.id]);
+    toast("Còn "+(QUIZ.length-n)+" câu chưa trả lời"); const el=document.getElementById("qi-"+first.id); if(el) el.scrollIntoView({behavior:"smooth",block:"center"}); return; }
+  const scores=scoreQuiz(S.qans);
+  S.quiz={scores,answers:Object.assign({},S.qans),ts:Date.now()}; save();
+  pushAssessment(scores,S.quiz.answers);
+  renderQuiz(); window.scrollTo(0,0);
+}
+function retakeQuiz(){ S.qans={}; S.quiz=null; save(); renderQuiz(); window.scrollTo(0,0); }
+function bandSummary(t){ return t>=80?"Bạn có nền tảng EQ rất mạnh. Hải trình EQ GYM giúp bạn giữ phong độ và lan tỏa cho người khác.":
+  t>=60?"Nền EQ của bạn tốt. Luyện đều mỗi ngày để biến nó thành phản xạ tự nhiên.":
+  t>=40?"Bạn đã có ý thức cảm xúc. 30 ngày luyện tập sẽ nâng cơ bắp cảm xúc lên rõ rệt.":
+  "Đây là điểm khởi đầu tuyệt vời — mọi thuyền trưởng đều bắt đầu từ boong tàu. Hải trình EQ GYM sinh ra cho bạn."; }
+function strengthTip(k){ return {aware:"bạn hiểu rõ thế giới nội tâm của mình.",real:"bạn sống thật và dám đối diện cảm xúc.",choice:"bạn làm chủ phản ứng tốt dưới áp lực.",empath:"bạn kết nối và thấu cảm người khác tốt."}[k]||""; }
+function quizResultHtml(q){
+  const s=q.scores; const em=bandEmoji(s.total);
+  const canSee=!BACKEND || !!AUTH;
+  const bars=PILLARS.map(pl=>`<div class="pbar dark"><span class="pl">${pl.em} ${pl.name}</span><span class="ptrk"><i style="width:${s[pl.k]}%"></i></span><b>${s[pl.k]}</b></div>`).join("");
+  const arr=PILLARS.map(p=>({p,v:s[p.k]})).sort((a,b)=>b.v-a.v);
+  const strong=arr[0], weak=arr[3];
+  const focusN=[...Array(30).keys()].find(n=>n>=1 && MOD_FOCUS[LESSONS[n].module]===weak.p.k);
+  const report=`<div class="eqp"><div class="eqp-h">📊 BÁO CÁO EQ CHI TIẾT <span>thang 100</span></div>
+    <div class="eqp-body">${eqRadarSVG({aware:s.aware/4,real:s.real/4,choice:s.choice/4,empath:s.empath/4})}<div class="eqp-bars">${bars}</div></div></div>
+    <div class="qintro"><h3>🧭 Đọc vị hải trình của bạn</h3>
+      <p>💪 <b>Trụ mạnh nhất:</b> ${strong.p.name} (${strong.v}/100) — ${strengthTip(strong.p.k)}</p>
+      <p>🎯 <b>Trụ cần luyện:</b> ${weak.p.name} (${weak.v}/100) — ${tipFor(weak.p.k)}</p>
+      <p>🧭 <b>Gợi ý bắt đầu:</b> ưu tiên vùng biển rèn "${weak.p.name}".${focusN!=null?(" Thử ra khơi từ Đảo "+focusN+" — "+esc(LESSONS[focusN].title)+"."):""}</p></div>`;
+  let h=`<div class="qres"><div class="big"><b>${s.total}</b><span>/100 EQ</span></div>
+    <div class="band">${em} ${s.band}</div><div class="sum">${bandSummary(s.total)}</div></div>`;
+  if(canSee){ h+=report; }
+  else { h+=`<div class="lockrep"><div class="blur">${report}</div>
+      <div class="ov"><div style="font-size:34px">🔒</div><b>Mở khóa báo cáo EQ chi tiết</b>
+      <p>Đăng ký tài khoản miễn phí để xem điểm 4 trụ, biểu đồ radar và lộ trình luyện tập riêng cho bạn.</p>
+      <button class="btn" style="max-width:280px" onclick="openAuth()">Đăng ký / Đăng nhập miễn phí</button></div></div>`; }
+  h+=`<div class="cta" style="margin-top:16px"><button class="btn ghost" onclick="retakeQuiz()">↻ Làm lại bài test</button></div>`;
+  if(canSee) h+=`<div class="cta" style="margin-top:10px"><button class="btn" onclick="tab('home')">🏴‍☠️ Bắt đầu hải trình EQ ›</button></div>`;
+  return h;
+}
 /* ===== TRỢ LÝ THUYỀN TRƯỞNG AI (CHAT) ===== */
 let COURSE_MAP=null;
 function courseMap(){
@@ -1082,6 +1312,7 @@ function renderJournal(){
 
 /* ===== SETTINGS ===== */
 function openSettings(){
+  renderAcct();
   document.getElementById("setmodal").classList.add("on");
   document.getElementById("apikey").value=getKey();
   document.getElementById("keystatus").textContent=getKey()?"✅ Đã có key — AI Gemini đang bật.":"Chưa có key — đang dùng chấm offline.";
@@ -1094,15 +1325,191 @@ function saveKey(){
 }
 function clearKey(){try{localStorage.removeItem("eqgym_gemini_key")}catch(e){};closeSettings();toast("Đã xóa key");updateAiWarn()}
 
+/* ===== TÀI KHOẢN / AUTH (Supabase) ===== */
+function isPremium(){ return !!(!BACKEND || (AUTH && AUTH.premium_until && new Date(AUTH.premium_until)>new Date())); }
+function isAdmin(){ return AUTH && AUTH.role==="admin"; }
+function renderHeader(){
+  const nav=document.getElementById("nav-set");
+  if(nav) nav.innerHTML=`<span class="ic">${AUTH?(isPremium()?"⭐":"👤"):"⚙️"}</span>Tài khoản`;
+}
+function renderAcct(){
+  const box=document.getElementById("acctbox"); if(!box) return;
+  if(!BACKEND){ box.innerHTML=`<div class="authbox"><div class="who">☁️ Backend chưa cấu hình — app đang chạy <b>chế độ local</b> (lưu trên máy này, mở khóa toàn bộ). Chủ app xem <b>docs/SETUP-SUPABASE.md</b> để bật tài khoản &amp; Premium.</div></div>`; return; }
+  if(AUTH){
+    const prem=isPremium();
+    box.innerHTML=`<div class="authbox"><div class="who">👤 <b>${esc(AUTH.email||"Thuyền viên")}</b>
+      <span class="prem-badge ${prem?"on":"off"}">${prem?"⭐ PREMIUM":"Miễn phí"}</span>
+      ${prem&&AUTH.premium_until?`<div style="font-size:11px;color:var(--mut);margin-top:5px">Premium đến ${new Date(AUTH.premium_until).toLocaleDateString("vi-VN")}</div>`:""}</div>
+      ${!prem?`<button class="btn" onclick="closeSettings();showPremium()">🚀 Nâng cấp Premium 999k/năm</button>`:""}
+      ${prem&&COMMUNITY_URL?`<a class="btn ghost" style="margin-top:10px;display:block;text-decoration:none;text-align:center" href="${COMMUNITY_URL}" target="_blank" rel="noopener">👥 Vào cộng đồng EQ GYM</a>`:""}
+      ${prem?`<button class="btn ghost" style="margin-top:10px" onclick="closeSettings();openBookClaim()">🎁 Nhận sách EQ Workbook (50 suất đầu)</button>`:""}
+      ${isAdmin()?`<button class="btn ghost" style="margin-top:10px" onclick="closeSettings();openAdmin()">🛡️ Trang Admin duyệt thanh toán</button>`:""}
+      <button class="btn ghost" style="margin-top:10px" onclick="signOut()">Đăng xuất</button></div>`;
+  } else {
+    box.innerHTML=`<div class="authbox"><div class="who">Đăng nhập để lưu tiến trình &amp; nhận báo cáo EQ trên mọi thiết bị.</div>
+      <input type="email" id="authemail" placeholder="Email của bạn">
+      <button class="btn" style="margin-top:10px" onclick="signInEmail()">Gửi liên kết đăng nhập ✉️</button>
+      <button class="btn ghost" style="margin-top:10px" onclick="signInGoogle()">Đăng nhập với Google</button>
+      <p class="mut" id="authmsg" style="font-size:11.5px;margin-top:8px"></p></div>`;
+  }
+}
+function openAuth(){ openSettings(); }
+async function signInEmail(){
+  const email=(document.getElementById("authemail").value||"").trim();
+  if(!email||!/.+@.+\..+/.test(email)){ toast("Nhập email hợp lệ"); return; }
+  const msg=document.getElementById("authmsg");
+  try{ const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.href.split('#')[0]}});
+    if(error) throw error; if(msg) msg.innerHTML="✅ Đã gửi liên kết đăng nhập tới email của bạn. Mở email và bấm vào link để vào."; }
+  catch(e){ if(msg) msg.textContent="Lỗi: "+e.message; }
+}
+async function signInGoogle(){ try{ await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.href.split('#')[0]}}); }catch(e){ toast("Lỗi Google: "+e.message); } }
+async function signOut(){ try{ await sb.auth.signOut(); }catch(e){} AUTH=null; try{localStorage.removeItem('eqgym_migrated')}catch(e){} closeSettings(); renderHeader(); renderHome(); toast("Đã đăng xuất"); }
+async function initAuth(){
+  if(!BACKEND) return;
+  try{
+    const {data}=await sb.auth.getSession();
+    await applySession(data.session);
+    sb.auth.onAuthStateChange((_e,session)=>{ applySession(session); });
+  }catch(e){ console.warn('initAuth',e); }
+}
+async function applySession(session){
+  if(session&&session.user){
+    const u=session.user; let prof=null;
+    try{ const {data}=await sb.from('profiles').select('*').eq('id',u.id).maybeSingle(); prof=data; }catch(e){}
+    if(!prof){ try{ await sb.from('profiles').upsert({id:u.id,email:u.email}); const {data}=await sb.from('profiles').select('*').eq('id',u.id).maybeSingle(); prof=data; }catch(e){} }
+    AUTH={id:u.id,email:u.email,premium_until:prof&&prof.premium_until,role:prof&&prof.role,pay_code:prof&&prof.pay_code};
+    await migrateIfNeeded();
+    await pullRemote();
+  } else { AUTH=null; }
+  renderHeader(); renderHome();
+}
+async function migrateIfNeeded(){
+  if(!BACKEND||!AUTH) return;
+  try{ if(localStorage.getItem('eqgym_migrated')) return; }catch(e){ return; }
+  await syncPush();
+  for(const k of Object.keys(S.history)){ const arr=S.history[k]||[]; for(let i=arr.length-1;i>=0;i--){ await pushPractice(+k,arr[i]); } }
+  if(S.quiz) await pushAssessment(S.quiz.scores,S.quiz.answers);
+  try{ localStorage.setItem('eqgym_migrated','1'); }catch(e){}
+}
+
+/* ===== PREMIUM CTA + THANH TOÁN QR (Phase 2) ===== */
+/* Dán thông tin ngân hàng của bạn để dựng mã QR VietQR (để trống = hiện hướng dẫn liên hệ) */
+const BANK={ bank_code:"", account_no:"", account_name:"" }; // vd bank_code:"VCB", account_no:"0011...", account_name:"NGUYEN VAN A"
+const COMMUNITY_URL=""; // dán link nhóm cộng đồng (Zalo/Facebook) — chỉ hiện cho Premium
+const PREMIUM_PRICE=999000;
+function showPremium(){ document.getElementById("premmodal").classList.add("on"); }
+function closePremium(){ document.getElementById("premmodal").classList.remove("on"); }
+function startCheckout(){
+  closePremium();
+  if(!BACKEND || !AUTH){ toast("Đăng nhập trước để nâng cấp Premium nhé"); openAuth(); return; }
+  openPay();
+}
+function vietQRUrl(code){
+  if(!BANK.bank_code||!BANK.account_no) return "";
+  const info=encodeURIComponent(code);
+  const name=encodeURIComponent(BANK.account_name||"");
+  return `https://img.vietqr.io/image/${BANK.bank_code}-${BANK.account_no}-compact2.png?amount=${PREMIUM_PRICE}&addInfo=${info}&accountName=${name}`;
+}
+function openPay(){
+  const code=(AUTH&&AUTH.pay_code)||("EQGYM-"+(AUTH?AUTH.id.slice(0,6).toUpperCase():"XXXX"));
+  const qr=vietQRUrl(code);
+  const sheet=document.getElementById("paysheet");
+  sheet.innerHTML=`<h3>💳 Nâng cấp Premium — 999.000đ</h3>
+    <p class="mut">Chuyển khoản đúng số tiền, <b>nội dung ghi: ${esc(code)}</b>. Sau khi chuyển, bấm "Tôi đã chuyển khoản" để chủ tàu duyệt kích hoạt Premium.</p>
+    ${qr?`<div style="text-align:center;margin:12px 0"><img src="${qr}" alt="QR" style="width:230px;max-width:80%;border-radius:12px;border:1px solid var(--line);background:#fff;padding:6px"></div>`:
+      `<div class="who" style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px">Chủ app chưa cấu hình tài khoản ngân hàng. Vui lòng liên hệ để được hướng dẫn thanh toán.</div>`}
+    <div class="who" style="background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px;font-size:12.5px;margin-top:6px">
+      Nội dung CK: <b>${esc(code)}</b> · Số tiền: <b>999.000đ</b></div>
+    <button class="btn" style="margin-top:12px" onclick="submitPayment('${esc(code)}')">Tôi đã chuyển khoản ✅</button>
+    <button class="btn ghost" style="margin-top:10px" onclick="closePay()">Đóng</button>
+    <p class="mut" id="paymsg" style="font-size:11.5px;margin-top:8px"></p>`;
+  document.getElementById("paymodal").classList.add("on");
+}
+function closePay(){ document.getElementById("paymodal").classList.remove("on"); }
+async function submitPayment(code){
+  const msg=document.getElementById("paymsg");
+  if(!BACKEND||!AUTH){ toast("Cần đăng nhập"); return; }
+  try{
+    await sb.from('payments').insert({user_id:AUTH.id, amount:PREMIUM_PRICE, code, status:'pending'});
+    if(msg) msg.innerHTML="✅ Đã ghi nhận. Chủ tàu sẽ duyệt và kích hoạt Premium cho bạn sớm. Cảm ơn thuyền viên!";
+    toast("Đã gửi yêu cầu — chờ duyệt");
+  }catch(e){ if(msg) msg.textContent="Lỗi: "+e.message; }
+}
+
+/* ===== NHẬN SÁCH EQ WORKBOOK (Phase 3 — 50 suất đầu) ===== */
+function val(id){ const e=document.getElementById(id); return e?(e.value||"").trim():""; }
+function openBookClaim(){
+  const sheet=document.getElementById("paysheet");
+  sheet.innerHTML=`<h3>🎁 Nhận sách EQ Workbook</h3>
+    <p class="mut">Ưu đãi 50 thành viên Premium đầu tiên. Điền thông tin để nhận sách:</p>
+    <input id="bkname" placeholder="Họ tên">
+    <input id="bkphone" placeholder="Số điện thoại" style="margin-top:10px">
+    <input id="bkaddr" placeholder="Địa chỉ nhận sách" style="margin-top:10px">
+    <button class="btn" style="margin-top:12px" onclick="submitBook()">Gửi thông tin nhận sách</button>
+    <button class="btn ghost" style="margin-top:10px" onclick="closePay()">Đóng</button>
+    <p class="mut" id="bkmsg" style="font-size:11.5px;margin-top:8px"></p>`;
+  document.getElementById("paymodal").classList.add("on");
+}
+async function submitBook(){
+  if(!BACKEND||!AUTH){ toast("Cần đăng nhập"); return; }
+  const name=val('bkname'),phone=val('bkphone'),addr=val('bkaddr');
+  const msg=document.getElementById("bkmsg");
+  if(!name||!phone||!addr){ if(msg) msg.textContent="Điền đủ thông tin nhé"; return; }
+  try{
+    let taken=0; try{ const {data}=await sb.rpc('book_seats_taken'); taken=data||0; }catch(e){}
+    if(taken>=50){ if(msg) msg.textContent="Rất tiếc, 50 suất sách đã hết. Cảm ơn bạn đã quan tâm!"; return; }
+    await sb.from('book_claims').insert({user_id:AUTH.id,full_name:name,phone,address:addr,seq:taken+1});
+    if(msg) msg.innerHTML="✅ Đã nhận thông tin! Sách sẽ được gửi tới bạn sớm. Cảm ơn thuyền viên!";
+    toast("Đã đăng ký nhận sách 🎁");
+  }catch(e){ if(msg) msg.textContent="Lỗi: "+e.message; }
+}
+
+/* ===== ADMIN DUYỆT THANH TOÁN (Phase 2) ===== */
+async function openAdmin(){
+  if(!isAdmin()){ toast("Chỉ dành cho admin"); return; }
+  show('admin'); tabHi('admin'); window.scrollTo(0,0);
+  const b=document.getElementById("adminbody"); b.innerHTML=`<p class="mut">Đang tải...</p>`;
+  try{
+    const {data}=await sb.from('payments').select('*').eq('status','pending').order('created_at',{ascending:true});
+    if(!data||!data.length){ b.innerHTML=`<div class="empty"><div class="em">✅</div><p>Không có yêu cầu chờ duyệt.</p></div>`; return; }
+    b.innerHTML=data.map(p=>`<div class="jitem"><h4>💳 ${esc(p.code||p.id)}</h4>
+      <div class="qt">User: ${esc(p.user_id)} · ${new Date(p.created_at).toLocaleString("vi-VN")}</div>
+      <p>Số tiền: <b>${(p.amount||0).toLocaleString("vi-VN")}đ</b></p>
+      <button class="btn" onclick="approvePay('${p.id}','${p.user_id}')">Duyệt · +1 năm Premium</button>
+      <button class="btn ghost" style="margin-top:8px" onclick="rejectPay('${p.id}')">Từ chối</button></div>`).join("");
+  }catch(e){ b.innerHTML=`<p class="mut">Lỗi: ${esc(e.message)}</p>`; }
+}
+async function approvePay(id,uid){
+  try{
+    const until=new Date(); until.setFullYear(until.getFullYear()+1);
+    await sb.from('profiles').update({premium_until:until.toISOString()}).eq('id',uid);
+    await sb.from('payments').update({status:'approved',approved_by:AUTH.id,approved_at:new Date().toISOString()}).eq('id',id);
+    toast("Đã duyệt Premium"); openAdmin();
+  }catch(e){ toast("Lỗi: "+e.message); }
+}
+async function rejectPay(id){
+  try{ await sb.from('payments').update({status:'rejected'}).eq('id',id); toast("Đã từ chối"); openAdmin(); }
+  catch(e){ toast("Lỗi: "+e.message); }
+}
+
+/* ===== KHỞI ĐỘNG ===== */
+async function boot(){
+  if(BACKEND){ await initAuth(); }
+  renderHeader();
+  if(!S.quiz && (!S.done||!S.done.length)){ renderQuiz(); show('quiz'); tabHi('quiz'); }
+  else { renderHome(); }
+}
+
 /* ===== UTIL ===== */
 function show(id){document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));document.getElementById(id).classList.add("on")}
-function tab(id){if(id==="home"){renderHome()}else if(id==="journal"){renderJournal()}else if(id==="assistant"){renderChat()}show(id);tabHi(id);if(id!=="assistant")window.scrollTo(0,0)}
-function tabHi(id){["home","journal","assistant"].forEach(k=>{const el=document.getElementById("nav-"+k);if(el)el.classList.toggle("on",id===k)})}
+function tab(id){if(id==="home"){renderHome()}else if(id==="journal"){renderJournal()}else if(id==="assistant"){renderChat()}else if(id==="quiz"){renderQuiz()}show(id);tabHi(id);if(id!=="assistant")window.scrollTo(0,0)}
+function tabHi(id){["home","quiz","journal","assistant"].forEach(k=>{const el=document.getElementById("nav-"+k);if(el)el.classList.toggle("on",id===k)})}
 function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
 function toast(t){const e=document.getElementById("toast");e.textContent=t;e.classList.add("show");
   clearTimeout(window._tt);window._tt=setTimeout(()=>e.classList.remove("show"),2400)}
 function resetAll(){if(confirm("Đặt lại toàn bộ hải trình, Berry và nhật ký? Không thể hoàn tác.")){
-  S={done:[],ans:{},scores:{},graded:{},streak:0,last:null,bounty:0,history:{},chat:[],scen:{},practices:0};save();renderHome();toast("⚓ Hải trình mới bắt đầu!")}}
+  const keepQuiz=S.quiz,keepQ=S.qans;
+  S={done:[],ans:{},scores:{},graded:{},streak:0,last:null,bounty:0,history:{},chat:[],scen:{},practices:0,quiz:keepQuiz,qans:keepQ};save();renderHome();toast("⚓ Hải trình mới bắt đầu!")}}
 function berryRain(){
   const c=document.createElement("div");c.className="confetti";document.body.appendChild(c);
   const ems=["💰","🪙","⭐","💎","🏴‍☠️"];
@@ -1118,7 +1525,7 @@ function berryRain(){
   }
   setTimeout(()=>c.remove(),3000);
 }
-renderHome();
+boot();
 
 </script>
 </body>
