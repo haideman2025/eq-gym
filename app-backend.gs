@@ -17,7 +17,7 @@ var CONFIG = {
   TELEGRAM_CHAT_ID:   '',   // id nhóm Telegram (số âm)
   DRIVE_FOLDER_ID:    '',   // thư mục Drive lưu ảnh CK — trống = tự tạo
   SHEET_ID:           '',   // Google Sheet dữ liệu — trống = tự tạo
-  GEMINI_MODEL:       'gemini-2.0-flash'
+  GEMINI_MODEL:       'gemini-2.5-flash'   // gemini-2.0-flash đã bị Google ngừng cho key mới
 };
 
 var MEMBERS = 'Members';
