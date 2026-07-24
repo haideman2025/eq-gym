@@ -240,6 +240,15 @@ html{scroll-behavior:smooth}
         <p style="font-size:13px;font-weight:700;margin:12px 0 0">Nội dung CK: <b id="ckText" style="color:#E85B5B"></b></p>
         <button id="btnCk" onclick="copyCk()" style="margin-top:8px;border:1px solid #B6EDDF;background:#EAFBF6;color:#0A6E5D;border-radius:11px;padding:10px 16px;font-size:12.5px;font-weight:800;cursor:pointer;min-height:42px;font-family:inherit">Copy nội dung CK</button>
       </div>
+      <div id="proofBox" style="display:none;margin-top:16px;border-top:1px dashed #B6EDDF;padding-top:14px">
+        <b style="font-size:13.5px;font-weight:800;color:#0A6E5D">Đã chuyển khoản? Gửi ảnh biên lai để xác nhận nhanh</b>
+        <p style="font-size:11.5px;color:#5C6B7A;font-weight:600;margin:4px 0 10px;line-height:1.55">Chụp màn hình biên lai CK và gửi lên đây — hệ thống lưu tự động và báo admin ngay, bạn được xác nhận nhanh hơn.</p>
+        <input id="proofFile" type="file" accept="image/*" style="display:none" onchange="onProof(this)">
+        <button id="proofPick" type="button" onclick="document.getElementById('proofFile').click()" style="width:100%;border:1px dashed #0FB89B;background:#EAFBF6;color:#0A6E5D;border-radius:13px;padding:14px;font-size:13px;font-weight:800;cursor:pointer;min-height:50px;font-family:inherit">📎 Chọn ảnh biên lai chuyển khoản</button>
+        <img id="proofPrev" style="display:none;width:100%;max-width:220px;border-radius:12px;margin:10px auto 0;border:1px solid #E3E8EE">
+        <button id="proofSend" type="button" onclick="sendProof()" style="display:none;width:100%;margin-top:10px;border:none;border-radius:13px;padding:14px;font-size:13.5px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#0FB89B,#0A8C77);color:#fff;min-height:50px;font-family:inherit">Gửi xác nhận CK →</button>
+        <p id="proofMsg" style="display:none;font-size:12.5px;font-weight:700;text-align:center;margin:10px 0 0;line-height:1.55"></p>
+      </div>
       <p style="font-size:12px;color:#3D4C5A;font-weight:600;line-height:1.65;margin:14px 0 0">Phí trọn gói: <b>860.000đ</b> (học viên khóa 1–2 chỉ chuyển tiền sách nếu mua). Sau khi CK, chờ xác nhận qua Zalo và vào group: <b><a href="https://facebook.com/groups/eqgym" target="_blank" rel="noopener">facebook.com/groups/eqgym</a></b></p>
     </div>
   </div>
@@ -288,7 +297,7 @@ document.getElementById("roadmap").innerHTML=WEEKS.map(function(w){return '<div 
 var OUTCOMES=["Hiểu điều đang thật sự diễn ra bên trong mình","Làm chủ phản ứng, không bị cảm xúc kéo đi","Phá mô thức lặp lại cùng một vấn đề","Điều tiết cảm xúc không cần kìm nén","Quyết định sáng suốt trong áp lực","Quan hệ sâu sắc hơn bằng thấu cảm","Động lực từ bên trong, không chờ hoàn cảnh","Hiểu não bộ tạo cảm xúc để luyện đúng","Kết nối lựa chọn hằng ngày với ý nghĩa sống",'Hệ thống luyện tập trọn đời cho "cơ bắp cảm xúc"'];
 document.getElementById("outcomes").innerHTML=OUTCOMES.map(function(t){return '<div style="display:flex;gap:10px;align-items:flex-start;font-size:13.5px;color:#DCE6EF;line-height:1.6;font-weight:600"><span style="color:#0FB89B;font-weight:800;flex:0 0 auto">✓</span><span>'+t+'</span></div>';}).join("");
 
-var FAQS=[["5:15 sáng — sớm quá không?","Đó chính là bí mật của EQ GYM: luyện trước khi ngày làm việc bắt đầu, não còn tươi, không bị cuộc họp nào chen ngang. 60 phút xong vẫn kịp đưa con đi học. Người bận nhất lớp lại là người đều nhất."],["Lỡ bận 1 buổi thì sao?","Có workbook + app EQ GYM để tự luyện bù, và group kín để hỏi lại nội dung. Quan trọng là giữ nhịp thực hành hằng ngày — 8 buổi live là điểm neo."],["Tôi đọc nhiều sách EQ rồi, khác gì?","Sách cho bạn BIẾT. EQ GYM bắt bạn LUYỆN: vòng lặp Hiểu → Thực hành → Phản chiếu → Lặp lại mỗi tuần, có chuyên gia điều phối và cộng đồng cùng nhịp."],["860K gồm những gì? Còn phí ẩn không?","Trọn gói: 8 buổi live + sách workbook (giá bìa 360K) + ship toàn quốc + app + group. Không phí ẩn. Học viên khóa 1-2 học lại free trọn đời."],["Chuyển khoản rồi thì làm gì tiếp?",'Điền form → CK theo cú pháp "Họ tên + SĐT + EQ Gym03" → nhận xác nhận qua Zalo + link group + sách ship về tận nhà trước khai giảng.']];
+var FAQS=[["5:15 sáng — sớm quá không?","Đó chính là bí mật của EQ GYM: luyện trước khi ngày làm việc bắt đầu, não còn tươi, không bị cuộc họp nào chen ngang. 60 phút xong vẫn kịp đưa con đi học. Người bận nhất lớp lại là người đều nhất."],["Lỡ bận 1 buổi thì sao?","Có workbook + app EQ GYM để tự luyện bù, và group kín để hỏi lại nội dung. Quan trọng là giữ nhịp thực hành hằng ngày — 8 buổi live là điểm neo."],["Tôi đọc nhiều sách EQ rồi, khác gì?","Sách cho bạn BIẾT. EQ GYM bắt bạn LUYỆN: vòng lặp Hiểu → Thực hành → Phản chiếu → Lặp lại mỗi tuần, có chuyên gia điều phối và cộng đồng cùng nhịp."],["860K gồm những gì? Còn phí ẩn không?","Trọn gói: 8 buổi live + sách workbook (giá bìa 360K) + ship toàn quốc + app + group. Không phí ẩn. Học viên khóa 1-2 học lại free trọn đời."],["Chuyển khoản rồi thì làm gì tiếp?",'Điền form → chuyển khoản với nội dung "EQGYM03 + SĐT" (ngắn gọn, không dấu) → bấm gửi ảnh biên lai ngay trên trang để được xác nhận nhanh → nhận link group + sách ship tận nhà trước khai giảng.']];
 document.getElementById("faqs").innerHTML=FAQS.map(function(f,i){return '<div class="faq'+(i===0?' open':'')+'" style="background:#fff;border:1px solid #E3E8EE;border-radius:14px;overflow:hidden"><div onclick="toggleFaq(this)" style="display:flex;justify-content:space-between;gap:10px;padding:14px 15px;cursor:pointer;align-items:center;min-height:48px"><b style="font-size:13.5px;font-weight:800;line-height:1.45">'+f[0]+'</b><span class="chev" style="color:#0FB89B;font-weight:800;flex:0 0 auto;font-size:18px">'+(i===0?'−':'+')+'</span></div><p class="faq-a">'+f[1]+'</p></div>';}).join("");
 function toggleFaq(el){var c=el.parentElement;var open=c.classList.toggle("open");c.querySelector(".chev").textContent=open?"−":"+";}
 
@@ -310,8 +319,15 @@ function toggleFaq(el){var c=el.parentElement;var open=c.classList.toggle("open"
   tick();setInterval(tick,1000);
 })();
 
-/* ===== Form submit → Google Form thật (hệ thống EQ GYM) ===== */
+/* ===== Backend Google Apps Script (lưu Drive + Sheet + báo Telegram) =====
+   Dán URL web app sau khi deploy Apps Script (xem dangky/apps-script.gs + SETUP-BACKEND.md).
+   Để trống = chỉ gửi Google Form như cũ, ẩn phần upload bằng chứng CK. */
+var BACKEND="";
 var GFORM="https://docs.google.com/forms/d/e/1FAIpQLSd1K3ysNKqtV9yzLGmZdVnhv1j6gHoX_zu74zhdM7_IlD_EwA/formResponse";
+
+/* Chuẩn hoá SĐT: bỏ ký tự thừa, +84/84 -> 0 */
+function normPhone(p){ var d=String(p||"").replace(/\D/g,""); if(d.indexOf("84")===0 && d.length>=11) d="0"+d.slice(2); return d; }
+
 function submitLead(ev){
   ev.preventDefault();
   var name=(document.getElementById("f_name").value||"").trim();
@@ -319,6 +335,8 @@ function submitLead(ev){
   var addr=(document.getElementById("f_addr").value||"").trim();
   var dt=(document.querySelector('input[name=doituong]:checked')||{}).value||"";
   if(!name || phone.replace(/[^0-9]/g,"").length<8 || !addr){ alert("Vui lòng điền họ tên, số điện thoại hợp lệ và địa chỉ nhận sách nhé!"); return false; }
+  var np=normPhone(phone);
+  // 1) Google Form (hệ thống sheet cũ)
   var data=new URLSearchParams();
   data.append("entry.2118394569",name);
   data.append("entry.1856728674",dt);
@@ -326,7 +344,11 @@ function submitLead(ev){
   data.append("entry.279948513",addr);
   data.append("entry.1317998704","Chưa");
   fetch(GFORM,{method:"POST",mode:"no-cors",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:data.toString()}).catch(function(){});
-  window._ck=name+" "+phone+" EQ Gym03";
+  // 2) Backend Drive + Telegram
+  window._lead={name:name,phone:np,addr:addr,doituong:dt};
+  if(BACKEND){ fetch(BACKEND,{method:"POST",mode:"no-cors",body:JSON.stringify({type:"lead",name:name,phone:np,addr:addr,doituong:dt})}).catch(function(){}); }
+  // Nội dung CK: ngắn gọn, không dấu
+  window._ck="EQGYM03 "+np;
   document.getElementById("ckText").textContent=window._ck;
   document.getElementById("formCard").style.display="none";
   document.getElementById("ckCard").style.display="block";
@@ -335,6 +357,33 @@ function submitLead(ev){
 }
 function copyStk(){ try{navigator.clipboard.writeText("00500000120722");}catch(e){} var b=document.getElementById("btnStk"); b.textContent="✓ Đã copy STK"; setTimeout(function(){b.textContent="Copy số tài khoản";},1600); }
 function copyCk(){ try{navigator.clipboard.writeText(window._ck||"");}catch(e){} var b=document.getElementById("btnCk"); b.textContent="✓ Đã copy nội dung"; setTimeout(function(){b.textContent="Copy nội dung CK";},1600); }
+
+/* ===== Upload bằng chứng chuyển khoản ===== */
+var _proofData=null;
+function onProof(inp){
+  var f=inp.files&&inp.files[0]; if(!f) return;
+  var r=new FileReader();
+  r.onload=function(){ compressImg(r.result,function(durl){ _proofData=durl; var p=document.getElementById("proofPrev"); p.src=durl; p.style.display="block"; document.getElementById("proofSend").style.display="block"; }); };
+  r.readAsDataURL(f);
+}
+function compressImg(durl,cb){
+  var img=new Image();
+  img.onload=function(){ var max=1280,w=img.width,h=img.height; if(w>max||h>max){ if(w>h){ h=Math.round(h*max/w); w=max; } else { w=Math.round(w*max/h); h=max; } } var c=document.createElement("canvas"); c.width=w; c.height=h; c.getContext("2d").drawImage(img,0,0,w,h); try{ cb(c.toDataURL("image/jpeg",0.82)); }catch(e){ cb(durl); } };
+  img.onerror=function(){ cb(durl); };
+  img.src=durl;
+}
+function sendProof(){
+  var btn=document.getElementById("proofSend"), msg=document.getElementById("proofMsg");
+  if(!_proofData){ return; }
+  if(!BACKEND){ msg.style.display="block"; msg.style.color="#B27607"; msg.textContent="Vui lòng gửi ảnh biên lai vào nhóm để được xác nhận nhé!"; return; }
+  btn.disabled=true; btn.textContent="Đang gửi...";
+  var L=window._lead||{};
+  var payload={type:"proof",name:L.name||"",phone:L.phone||"",ck:window._ck||"",image:_proofData};
+  var done=function(){ btn.style.display="none"; document.getElementById("proofPick").style.display="none"; document.getElementById("proofPrev").style.opacity=".6"; msg.style.display="block"; msg.style.color="#0A6E5D"; msg.textContent="✓ Đã gửi bằng chứng CK! Admin sẽ xác nhận và liên hệ qua Zalo trong ít phút."; };
+  fetch(BACKEND,{method:"POST",mode:"no-cors",body:JSON.stringify(payload)}).then(done).catch(done);
+}
+/* Hiện phần upload chỉ khi backend đã cấu hình */
+if(BACKEND){ var pb=document.getElementById("proofBox"); if(pb) pb.style.display="block"; }
 </script>
 </body>
 </html>
