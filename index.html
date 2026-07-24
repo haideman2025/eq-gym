@@ -70,21 +70,39 @@ async function geminiFetch(body){
   if(!r.ok) throw new Error('HTTP '+r.status); return await r.json();
 }
 let _psT=null;
-function syncPoints(){ if(!CODE_MODE||!MEMBER||MEMBER.role!=='member') return; clearTimeout(_psT); _psT=setTimeout(async()=>{ try{ const d=await api({action:'sync',code:MEMBER.code,points:S.bounty}); if(d&&d.ok) MEMBER.points=d.points; }catch(e){} },1500); }
+function memberSession(){ try{ return localStorage.getItem('eqgym_session')||''; }catch(e){ return ''; } }
+function handleKick(d){ if(d&&d.ok===false&&(d.error==='session'||d.error==='blocked')){ kickedLogout(d.error); return true; } return false; }
+function kickedLogout(reason){ MEMBER=null; try{ localStorage.removeItem('eqgym_code'); localStorage.removeItem('eqgym_session'); }catch(e){} stopHeartbeat(); stopRankRefresh(); UI.settingsOpen=false; UI.view='home'; UI.loginErr=(reason==='blocked')?'Tài khoản của bạn đã bị tạm khoá. Liên hệ admin để mở lại.':'Bạn vừa đăng nhập ở thiết bị khác. Mỗi tài khoản chỉ dùng 1 thiết bị cùng lúc — để bạn tập trung & chánh niệm khi học.'; render(); }
+let _saT=null;
+function syncAll(){ if(!CODE_MODE||!MEMBER||MEMBER.role!=='member') return; clearTimeout(_saT); _saT=setTimeout(async()=>{ try{ const d=await api({action:'saveProgress',code:MEMBER.code,session:MEMBER.session,data:S}); handleKick(d); }catch(e){} },2500); }
+function syncPoints(){ syncAll(); }
+let _hb=null;
+function startHeartbeat(){ stopHeartbeat(); if(!CODE_MODE||!MEMBER||MEMBER.role!=='member') return; _hb=setInterval(async()=>{ try{ const d=await api({action:'ping',code:MEMBER.code,session:MEMBER.session}); handleKick(d); }catch(e){} },20000); }
+function stopHeartbeat(){ if(_hb){ clearInterval(_hb); _hb=null; } }
+let _rankT=null;
+function startRankRefresh(){ stopRankRefresh(); _rankT=setInterval(()=>{ if(UI.view==='rank') loadRank(); else stopRankRefresh(); },15000); }
+function stopRankRefresh(){ if(_rankT){ clearInterval(_rankT); _rankT=null; } }
+function applyProgress(p){ try{ p=p||{}; const L=S, m=Object.assign(dflt(),p);
+  m.done=[...new Set([...(p.done||[]),...(L.done||[])])];
+  m.bounty=Math.max(p.bounty||0,L.bounty||0); m.streak=Math.max(p.streak||0,L.streak||0); m.practices=Math.max(p.practices||0,L.practices||0); m.last=p.last||L.last;
+  ['ans','scores','graded','scen','qans'].forEach(k=>{ m[k]=Object.assign({},L[k]||{},p[k]||{}); });
+  m.history=Object.assign({},L.history||{},p.history||{}); m.chat=(p.chat&&p.chat.length)?p.chat:(L.chat||[]); m.quiz=p.quiz||L.quiz;
+  S=m; try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){ _mem=S; }
+}catch(e){} }
 async function doLogin(){
   const code=(val('logincode')||'').trim().toUpperCase(); if(!code){ UI.loginErr='Nhập mã đăng nhập'; render(); return; }
   UI.loginBusy=true; UI.loginErr=''; render();
   try{ const d=await api({action:'login',code});
     if(!d||!d.ok){ UI.loginBusy=false; UI.loginErr=(d&&d.error)||'Mã không đúng'; render(); return; }
-    MEMBER={code,name:d.name,points:d.points||0,role:d.role};
-    try{ localStorage.setItem('eqgym_code',code); }catch(e){}
-    if(d.role==='member'){ S.bounty=d.points||0; save(); }
+    MEMBER={code,name:d.name,points:d.points||0,role:d.role,session:d.session||''};
+    try{ localStorage.setItem('eqgym_code',code); localStorage.setItem('eqgym_session',MEMBER.session); }catch(e){}
+    if(d.role==='member'){ if(d.progress){ applyProgress(d.progress); } else { S.bounty=d.points||0; save(); } startHeartbeat(); }
     UI.loginBusy=false; UI.loginErr=''; UI.view='home'; sfx('success'); render();
   }catch(e){ UI.loginBusy=false; UI.loginErr='Lỗi kết nối, thử lại'; render(); }
 }
-function logoutMember(){ MEMBER=null; try{ localStorage.removeItem('eqgym_code'); }catch(e){} UI.settingsOpen=false; UI.view='home'; render(); }
-function openRank(){ sfx('tap'); UI.view='rank'; UI.rankData=null; render(); loadRank(); window.scrollTo(0,0); }
-async function loadRank(){ try{ const d=await api({action:'leaderboard',code:MEMBER.code}); if(d&&d.ok){ UI.rankData=d; render(); } }catch(e){} }
+function logoutMember(){ MEMBER=null; try{ localStorage.removeItem('eqgym_code'); localStorage.removeItem('eqgym_session'); }catch(e){} stopHeartbeat(); stopRankRefresh(); UI.settingsOpen=false; UI.view='home'; render(); }
+function openRank(){ sfx('tap'); UI.view='rank'; UI.rankData=null; render(); loadRank(); startRankRefresh(); window.scrollTo(0,0); }
+async function loadRank(){ try{ const d=await api({action:'leaderboard',code:MEMBER.code,session:MEMBER.session}); if(handleKick(d)) return; if(d&&d.ok){ UI.rankData=d; render(); } }catch(e){} }
 function openAdminCode(){ sfx('tap'); UI.settingsOpen=false; UI.view='admincode'; UI.newCode=null; UI.members=undefined; UI.adminTab='members'; render(); loadMembers(); window.scrollTo(0,0); }
 function adminTabTo(t){ UI.adminTab=t; render(); if(t==='activity') loadActivity(); else loadMembers(); }
 async function loadActivity(){ try{ const d=await api({action:'activity',admin:MEMBER.code}); if(d&&d.ok){ UI.activity=d.items; render(); } }catch(e){} }
@@ -120,7 +138,7 @@ function viewRank(){
         <div style="font-family:'Space Grotesk';font-weight:700;color:#0A6E5D">${fmt(m.points)}<span style="font-size:10px;color:#7FA39B;font-weight:700"> EP</span></div></div>`; });
   } else rows=`<p style="text-align:center;color:#5C6B7A;font-weight:600;padding:30px 0">Đang tải bảng thi đua...</p>`;
   return `<div style="animation:fade .25s">
-    <div style="padding:calc(env(safe-area-inset-top) + 20px) 18px 6px"><h1 style="margin:0;font-family:'Space Grotesk';font-size:22px;font-weight:700">🏆 Đảo Thi Đua</h1><p style="margin:2px 0 0;color:#5C6B7A;font-size:12px;font-weight:700;letter-spacing:.3px">Xếp hạng theo tổng điểm rèn luyện (EP)${d&&d.total?' · '+d.total+' thành viên':''}</p></div>
+    <div style="padding:calc(env(safe-area-inset-top) + 20px) 18px 6px"><h1 style="margin:0;font-family:'Space Grotesk';font-size:22px;font-weight:700">🏆 Đảo Thi Đua</h1><p style="margin:2px 0 0;color:#5C6B7A;font-size:12px;font-weight:700;letter-spacing:.3px">Xếp hạng theo tổng điểm rèn luyện (EP)${d&&d.total?' · '+d.total+' thành viên':''} · 🔄 tự cập nhật</p></div>
     ${d&&d.me?`<div style="margin:12px 16px 0;background:linear-gradient(150deg,#0F1923,#0A8C77 130%);border-radius:18px;padding:16px 18px;color:#fff;display:flex;align-items:center;gap:14px"><div style="font-family:'Space Grotesk';font-size:26px;font-weight:700">#${d.me.rank}</div><div style="flex:1"><div style="font-weight:800;font-size:15px">${esc(d.me.name)}</div><div style="color:#BFEFE4;font-size:12px;font-weight:700">Hạng của bạn</div></div><div style="font-family:'Space Grotesk';font-size:20px;font-weight:700;color:#BFEFE4">${fmt(d.me.points)} EP</div></div>`:''}
     <div style="padding:14px 16px 0">${rows}</div>
     <div style="padding:6px 16px 24px"><button onclick="loadRank()" style="width:100%;border:1px solid #E3E8EE;border-radius:13px;padding:12px;font-size:13px;font-weight:800;background:#fff;cursor:pointer;color:#0F1923">↻ Làm mới</button></div>
@@ -1013,7 +1031,7 @@ function clearChat(){ if(confirm('Xóa toàn bộ hội thoại với Coach AI?'
 document.addEventListener('pointerdown',function once(){ syncBgm(); }, {once:false});
 async function boot(){
   if(BACKEND){ try{ await initAuth(); }catch(e){ console.warn(e); } }
-  if(CODE_MODE){ const c=memberCode(); if(c){ try{ const d=await api({action:'login',code:c}); if(d&&d.ok){ MEMBER={code:c,name:d.name,points:d.points||0,role:d.role}; if(d.role==='member'){ S.bounty=d.points||0; save(); } } else { try{ localStorage.removeItem('eqgym_code'); }catch(e){} } }catch(e){} } }
+  if(CODE_MODE){ const c=memberCode(); if(c){ try{ const d=await api({action:'login',code:c}); if(d&&d.ok){ MEMBER={code:c,name:d.name,points:d.points||0,role:d.role,session:d.session||''}; try{localStorage.setItem('eqgym_session',MEMBER.session||'');}catch(e){} if(d.role==='member'){ if(d.progress) applyProgress(d.progress); else S.bounty=d.points||0; startHeartbeat(); } } else { try{ localStorage.removeItem('eqgym_code'); localStorage.removeItem('eqgym_session'); }catch(e){} } }catch(e){} } }
   if(!CODE_MODE && !S.quiz && (!S.done||!S.done.length)){ UI.view='quiz'; }
   render();
   syncDriveVideos();
