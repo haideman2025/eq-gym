@@ -1,64 +1,53 @@
-# Bật hệ thống mã đăng nhập + Gemini ẩn + điểm + thi đua
+# Backend HỢP NHẤT — mã đăng nhập · Gemini ẩn · điểm/thi đua · tự cấp mã · quản trị
 
-App EQ GYM giờ hỗ trợ **chế độ thành viên**: người dùng cần **mã đăng nhập do admin cấp**,
-Gemini key **dùng chung & ẩn phía server**, mỗi thành viên **tích điểm từ 0**, có **Đảo Thi Đua**
-(bảng xếp hạng) giữa các thành viên.
+Một Apps Script duy nhất (`app-backend.gs`) lo TẤT CẢ. Cả **app** lẫn **landing** trỏ về CÙNG 1 URL.
 
-Cần 1 backend (Google Apps Script) — làm 1 lần, ~15 phút. Y hệt cách bạn đã làm cho trang đăng ký.
-
-> Khi `APP_BACKEND` còn trống → app chạy chế độ mở như cũ (không cần mã). Điền URL vào → bật chế độ thành viên.
+Tính năng:
+- **Landing:** khách upload bằng chứng CK → hệ thống **tự tạo mã học viên**, hiện ngay cho khách (copy + mở app) + báo Telegram + lưu ảnh Drive.
+- **App:** đăng nhập bằng mã · Coach AI (Gemini) **key ẩn dùng chung** · điểm từ 0 · Đảo Thi Đua.
+- **Admin:** quản trị toàn bộ tài khoản (khoá/mở/xoá/cấp mã tay) + **nhật ký hoạt động** toàn hệ thống.
 
 ---
 
-## 1) Lấy Gemini API key (dùng chung cho cả lớp)
-1. Vào **https://aistudio.google.com/apikey** → **Create API key** → copy (dạng `AIza...`).
-   (Miễn phí; đây là key DUY NHẤT của bạn, sẽ giấu trong server — học viên không thấy.)
+## Cấu hình (1 lần)
 
-## 2) Tạo Apps Script backend
-1. Vào **https://script.google.com** → **New project**.
-2. Xoá code mẫu, dán **toàn bộ** file `app-backend.gs`.
-3. Điền 2 giá trị trong `CONFIG` ở đầu:
+1. **Gemini key:** aistudio.google.com/apikey → Create → copy (`AIza...`).
+2. Mở Apps Script **project app backend hiện có** (cái đang chạy URL `...AKfycbyrKnB6...`).
+3. **Xoá hết code cũ, dán TOÀN BỘ `app-backend.gs` mới.**
+4. Điền `CONFIG` — **nhớ điền lại đủ, đừng để trống** (dán code mới sẽ xoá config cũ):
    ```js
    var CONFIG = {
-     GEMINI_API_KEY: 'AIza...(key bước 1)',
-     ADMIN_SECRET:   'DatMotChuoiKhoDoan_Admin2026',  // đây là MÃ ĐĂNG NHẬP ADMIN của bạn
-     SHEET_ID:       '',   // để trống -> tự tạo sheet "EQ GYM - Members"
-     ...
+     GEMINI_API_KEY:     'AIza...(key Gemini)',
+     ADMIN_SECRET:       'MA_ADMIN_CUA_BAN',        // mã đăng nhập admin (nên CHỮ IN HOA + số)
+     TELEGRAM_BOT_TOKEN: '8745383878:AAF...HelJ4',  // token bot (đã có từ landing)
+     TELEGRAM_CHAT_ID:   '-5253595814',             // nhóm Telegram (đã có)
+     DRIVE_FOLDER_ID:    '',                         // trống = tự tạo thư mục lưu ảnh CK
+     SHEET_ID:           '',                         // trống = tự tạo "EQ GYM - He thong"
+     GEMINI_MODEL:       'gemini-2.0-flash'
    };
    ```
-   - `ADMIN_SECRET` chính là **mã bạn dùng để đăng nhập với quyền admin** trong app (giữ bí mật).
-4. **Ctrl+S**.
+5. **Ctrl+S** → **Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy**.
+   → **URL giữ nguyên** (`...AKfycbyrKnB6...`), app + landing không cần đổi gì nữa.
 
-## 3) Deploy Web App
-1. **Deploy → New deployment** → ⚙ → **Web app**.
-2. **Execute as:** `Me` · **Who has access:** `Anyone`.
-3. **Deploy** → cấp quyền (Authorize → Advanced → Go to project → Allow).
-4. Copy **Web app URL** (`https://script.google.com/macros/s/AKfyc.../exec`).
-
-## 4) Gắn URL vào app
-1. Mở `index.html`, tìm dòng:
-   ```js
-   const APP_BACKEND="";
-   ```
-2. Dán URL vào giữa hai nháy → commit + push.
-
-> Hoặc gửi URL cho Claude dán + deploy giúp.
+> Nếu lỡ tạo "New deployment" (URL mới), gửi URL cho Claude để cập nhật lại 2 frontend.
 
 ---
 
-## Dùng hằng ngày
+## Vận hành
 
-**Cấp mã cho khách (admin):**
-1. Mở app → **Tài khoản** → nhập **ADMIN_SECRET** ở màn đăng nhập → vào với quyền admin.
-2. Vào **Tài khoản → 🛡️ Cấp mã học viên** → nhập tên khách → **Tạo mã** → copy mã gửi khách.
-   (Mã tự lưu vào Google Sheet "EQ GYM - Members", điểm khởi tạo = 0.)
+**Khách hàng (tự động):** landing → điền form → CK → **upload ảnh biên lai** → nhận **mã học viên ngay trên trang** → copy → mở app → dán mã → học. (Admin cũng nhận mã qua Telegram.)
 
-**Khách dùng:** mở app → nhập mã được cấp → luyện tập. Coach AI bật sẵn (không cần key riêng).
-Điểm tích luỹ tự đồng bộ; xem thứ hạng ở tab **🏆 Thi đua**.
+**Admin:**
+- Đăng nhập app bằng `ADMIN_SECRET` → **Tài khoản → 🛡️ Quản trị**.
+- Tab **👥 Tài khoản:** xem tất cả học viên + điểm; **Khoá / Mở khoá / Xoá**; **Cấp mã tay** (khách trả tiền mặt).
+- Tab **📜 Nhật ký:** lịch sử toàn hệ thống (đăng nhập, đăng ký, cấp mã, khoá/mở/xoá, hoàn thành buổi).
+
+## Dữ liệu
+- Sheet **"EQ GYM - He thong"** (tự tạo trong Drive): tab **Members** (Mã/Tên/SĐT/Điểm/Vai trò/Trạng thái/…) + tab **Activity** (nhật ký).
+- Ảnh CK: thư mục Drive **"EQ GYM - Bang chung CK"**.
 
 ## Ghi chú
-- Mọi lệnh gọi Gemini đi qua server → **key không bao giờ lộ** trong trình duyệt.
-- Chỉ người có mã hợp lệ mới gọi được AI (chống lạm dụng).
-- Điểm là nguồn thật ở server (Sheet), chống gian lận cơ bản (server lấy điểm cao nhất).
-- Sửa code sau này: **Deploy → Manage deployments → Edit → New version** (giữ nguyên URL).
-- Hạn mức: Apps Script ~20.000 lệnh/ngày, đủ cho vài chục–vài trăm học viên. Cần lớn hơn → chuyển Supabase.
+- Mã tự cấp theo **SĐT** — khách upload nhiều lần vẫn 1 mã (không trùng).
+- Gemini key không bao giờ lộ (mọi call qua server). Chỉ mã hợp lệ + chưa bị khoá mới gọi được AI.
+- Tài khoản bị **Khoá** sẽ không đăng nhập được (báo "đã bị tạm khoá").
+- Hạn mức Apps Script ~20.000 lệnh/ngày — đủ vài chục–vài trăm học viên. Cần hơn → Supabase.

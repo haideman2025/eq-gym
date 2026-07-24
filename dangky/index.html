@@ -248,6 +248,7 @@ html{scroll-behavior:smooth}
         <img id="proofPrev" style="display:none;width:100%;max-width:220px;border-radius:12px;margin:10px auto 0;border:1px solid #E3E8EE">
         <button id="proofSend" type="button" onclick="sendProof()" style="display:none;width:100%;margin-top:10px;border:none;border-radius:13px;padding:14px;font-size:13.5px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#0FB89B,#0A8C77);color:#fff;min-height:50px;font-family:inherit">Gửi xác nhận CK →</button>
         <p id="proofMsg" style="display:none;font-size:12.5px;font-weight:700;text-align:center;margin:10px 0 0;line-height:1.55"></p>
+        <div id="codeResult"></div>
       </div>
       <p style="font-size:12px;color:#3D4C5A;font-weight:600;line-height:1.65;margin:14px 0 0">Phí trọn gói: <b>860.000đ</b> (học viên khóa 1–2 chỉ chuyển tiền sách nếu mua). Sau khi CK, chờ xác nhận qua Zalo và vào group: <b><a href="https://facebook.com/groups/eqgym" target="_blank" rel="noopener">facebook.com/groups/eqgym</a></b></p>
     </div>
@@ -322,7 +323,8 @@ function toggleFaq(el){var c=el.parentElement;var open=c.classList.toggle("open"
 /* ===== Backend Google Apps Script (lưu Drive + Sheet + báo Telegram) =====
    Dán URL web app sau khi deploy Apps Script (xem dangky/apps-script.gs + SETUP-BACKEND.md).
    Để trống = chỉ gửi Google Form như cũ, ẩn phần upload bằng chứng CK. */
-var BACKEND="https://script.google.com/macros/s/AKfycbwiEpxwzEZbg5go9vtRCSOBLLESuyFA110AX4y8JHmG5TnRGp7ExL9I_TupV9QasKyh/exec";
+var BACKEND="https://script.google.com/macros/s/AKfycbyrKnB6WakbuhXcZXActx-hjBvanoyfYclgc5xOQ8TUH9QILDWxVfhqnPnVLhHDjUeEPA/exec";
+var APP_URL="https://haideman2025.github.io/eq-gym/";
 var GFORM="https://docs.google.com/forms/d/e/1FAIpQLSd1K3ysNKqtV9yzLGmZdVnhv1j6gHoX_zu74zhdM7_IlD_EwA/formResponse";
 
 /* Chuẩn hoá SĐT: bỏ ký tự thừa, +84/84 -> 0 */
@@ -376,12 +378,34 @@ function sendProof(){
   var btn=document.getElementById("proofSend"), msg=document.getElementById("proofMsg");
   if(!_proofData){ return; }
   if(!BACKEND){ msg.style.display="block"; msg.style.color="#B27607"; msg.textContent="Vui lòng gửi ảnh biên lai vào nhóm để được xác nhận nhé!"; return; }
-  btn.disabled=true; btn.textContent="Đang gửi...";
+  btn.disabled=true; btn.textContent="Đang gửi & cấp mã...";
   var L=window._lead||{};
-  var payload={type:"proof",name:L.name||"",phone:L.phone||"",ck:window._ck||"",image:_proofData};
-  var done=function(){ btn.style.display="none"; document.getElementById("proofPick").style.display="none"; document.getElementById("proofPrev").style.opacity=".6"; msg.style.display="block"; msg.style.color="#0A6E5D"; msg.textContent="✓ Đã gửi bằng chứng CK! Admin sẽ xác nhận và liên hệ qua Zalo trong ít phút."; };
-  fetch(BACKEND,{method:"POST",mode:"no-cors",body:JSON.stringify(payload)}).then(done).catch(done);
+  var payload={action:"proof",name:L.name||"",phone:L.phone||"",addr:L.addr||"",ck:window._ck||"",image:_proofData};
+  fetch(BACKEND,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(payload)})
+    .then(function(r){ return r.json(); })
+    .then(function(d){ showCode(d&&d.code?d:null); })
+    .catch(function(){ showCode(null); });
 }
+function showCode(d){
+  var pk=document.getElementById("proofPick"); if(pk) pk.style.display="none";
+  var sd=document.getElementById("proofSend"); if(sd) sd.style.display="none";
+  var pv=document.getElementById("proofPrev"); if(pv) pv.style.opacity=".55";
+  var box=document.getElementById("codeResult");
+  if(d&&d.code){
+    window._memberCode=d.code;
+    box.innerHTML='<div style="margin-top:14px;background:linear-gradient(150deg,#0F1923,#0A8C77 130%);border-radius:16px;padding:18px 16px;text-align:center;color:#fff">'
+      +'<div style="font-size:11px;color:#7FA39B;font-weight:800;letter-spacing:1.5px">🎉 MÃ HỌC VIÊN CỦA BẠN</div>'
+      +'<div style="font-family:\'Space Grotesk\',sans-serif;font-size:30px;font-weight:700;letter-spacing:4px;margin:6px 0">'+d.code+'</div>'
+      +'<button onclick="copyMember()" id="btnMem" style="border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;border-radius:11px;padding:10px 20px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit">Copy mã</button>'
+      +'</div>'
+      +'<a href="'+APP_URL+'" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:12px;background:linear-gradient(135deg,#E85B5B,#C74848);color:#fff;font-size:14.5px;font-weight:800;padding:16px;border-radius:14px;text-decoration:none">Mở app EQ GYM & dán mã →</a>'
+      +'<div style="margin-top:12px;background:#EAFBF6;border:1px solid #B6EDDF;border-radius:12px;padding:13px 15px;font-size:12.5px;color:#22303D;font-weight:600;line-height:1.75"><b style="color:#0A6E5D">Cách vào học:</b><br>1. Bấm <b>Copy mã</b> ở trên.<br>2. Bấm <b>Mở app EQ GYM</b>.<br>3. Dán mã vào ô đăng nhập → bắt đầu luyện tập ngay.<br><span style="color:#5C6B7A">📌 Lưu lại mã này để đăng nhập những lần sau nhé!</span></div>';
+    box.scrollIntoView({behavior:"smooth",block:"center"});
+  } else {
+    box.innerHTML='<p style="margin-top:12px;font-size:12.5px;font-weight:700;color:#0A6E5D;text-align:center;line-height:1.65">✓ Đã gửi bằng chứng CK! Admin sẽ xác nhận và gửi mã học viên cho bạn qua Zalo trong ít phút.</p>';
+  }
+}
+function copyMember(){ try{navigator.clipboard.writeText(window._memberCode||"");}catch(e){} var b=document.getElementById("btnMem"); if(b){ b.textContent="✓ Đã copy mã"; setTimeout(function(){b.textContent="Copy mã";},1600);} }
 /* Hiện phần upload chỉ khi backend đã cấu hình */
 if(BACKEND){ var pb=document.getElementById("proofBox"); if(pb) pb.style.display="block"; }
 </script>

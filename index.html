@@ -85,7 +85,12 @@ async function doLogin(){
 function logoutMember(){ MEMBER=null; try{ localStorage.removeItem('eqgym_code'); }catch(e){} UI.settingsOpen=false; UI.view='home'; render(); }
 function openRank(){ sfx('tap'); UI.view='rank'; UI.rankData=null; render(); loadRank(); window.scrollTo(0,0); }
 async function loadRank(){ try{ const d=await api({action:'leaderboard',code:MEMBER.code}); if(d&&d.ok){ UI.rankData=d; render(); } }catch(e){} }
-function openAdminCode(){ sfx('tap'); UI.settingsOpen=false; UI.view='admincode'; UI.newCode=null; UI.members=undefined; render(); loadMembers(); window.scrollTo(0,0); }
+function openAdminCode(){ sfx('tap'); UI.settingsOpen=false; UI.view='admincode'; UI.newCode=null; UI.members=undefined; UI.adminTab='members'; render(); loadMembers(); window.scrollTo(0,0); }
+function adminTabTo(t){ UI.adminTab=t; render(); if(t==='activity') loadActivity(); else loadMembers(); }
+async function loadActivity(){ try{ const d=await api({action:'activity',admin:MEMBER.code}); if(d&&d.ok){ UI.activity=d.items; render(); } }catch(e){} }
+async function adminSetStatus(code,status){ try{ const d=await api({action:'setStatus',admin:MEMBER.code,code,status}); if(d&&d.ok){ toast(status==='blocked'?'Đã khoá':'Đã mở khoá'); loadMembers(); } else toast((d&&d.error)||'Lỗi'); }catch(e){ toast('Lỗi'); } }
+async function adminDelete(code,name){ if(!confirm('Xoá tài khoản "'+name+'" ('+code+')? Không thể hoàn tác.')) return; try{ const d=await api({action:'deleteMember',admin:MEMBER.code,code}); if(d&&d.ok){ toast('Đã xoá '+code); loadMembers(); } else toast((d&&d.error)||'Lỗi'); }catch(e){ toast('Lỗi'); } }
+function evLabel(e){ return ({login:'🔓 Đăng nhập',register:'📝 Đăng ký',['code-issued']:'🔑 Cấp mã',blocked:'⛔ Khoá',unblocked:'✅ Mở khoá',deleted:'🗑️ Xoá',['reset-points']:'♻️ Reset điểm',['done-lesson']:'🎓 Xong buổi'})[e]||e; }
 async function adminCreate(){ const name=(val('newname')||'').trim(); if(!name){ toast('Nhập tên khách'); return; } UI.adminBusy=true; render(); try{ const d=await api({action:'createCode',admin:MEMBER.code,name}); if(d&&d.ok){ UI.newCode=d; UI.adminBusy=false; loadMembers(); render(); toast('Đã tạo mã cho '+d.name); } else { UI.adminBusy=false; toast((d&&d.error)||'Lỗi'); render(); } }catch(e){ UI.adminBusy=false; toast('Lỗi kết nối'); render(); } }
 async function loadMembers(){ try{ const d=await api({action:'listMembers',admin:MEMBER.code}); if(d&&d.ok){ UI.members=d.members; render(); } }catch(e){} }
 function copyCode(c){ try{ navigator.clipboard.writeText(c); toast('Đã copy mã '+c); }catch(e){} }
@@ -122,16 +127,38 @@ function viewRank(){
   </div>`;
 }
 function viewAdminCode(){
-  const nc=UI.newCode; let list='';
-  (UI.members||[]).forEach(m=>{ list+=`<div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #E3E8EE;border-radius:12px;padding:11px 13px;margin-bottom:7px"><div style="flex:1;min-width:0"><b style="font-size:13.5px">${esc(m.name)}</b><div style="font-family:'Space Grotesk';font-size:12px;color:#0A6E5D;font-weight:700">${esc(m.code)}</div></div><div style="font-family:'Space Grotesk';font-weight:700;color:#5C6B7A;font-size:13px">${fmt(m.points)} EP</div><button onclick="copyCode('${esc(m.code)}')" style="border:1px solid #E3E8EE;background:#F5F8FA;border-radius:9px;padding:7px 10px;font-size:11px;font-weight:800;cursor:pointer;color:#0A6E5D">Copy</button></div>`; });
+  const nc=UI.newCode; const tab=UI.adminTab||'members';
+  const tabBtn=(t,label)=>`<button onclick="adminTabTo('${t}')" style="flex:1;border:none;border-radius:11px;padding:10px;font-size:12.5px;font-weight:800;cursor:pointer;background:${tab===t?'#0F1923':'transparent'};color:${tab===t?'#fff':'#5C6B7A'}">${label}</button>`;
+  let body='';
+  if(tab==='members'){
+    let list='';
+    (UI.members||[]).forEach(m=>{ const bl=m.status==='blocked';
+      list+=`<div style="background:#fff;border:1px solid ${bl?'#F3C9C9':'#E3E8EE'};border-radius:13px;padding:11px 13px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="flex:1;min-width:0"><b style="font-size:13.5px">${esc(m.name)}</b>${bl?' <span style="font-size:10px;color:#E85B5B;font-weight:800">● ĐÃ KHOÁ</span>':''}<div style="font-family:'Space Grotesk';font-size:12px;color:#0A6E5D;font-weight:700">${esc(m.code)}${m.phone?' · '+esc(m.phone):''}</div></div>
+          <div style="font-family:'Space Grotesk';font-weight:700;color:#5C6B7A;font-size:13px">${fmt(m.points)} EP</div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:9px">
+          <button onclick="copyCode('${esc(m.code)}')" style="flex:1;border:1px solid #E3E8EE;background:#F5F8FA;border-radius:9px;padding:8px;font-size:11px;font-weight:800;cursor:pointer;color:#0A6E5D">Copy mã</button>
+          <button onclick="adminSetStatus('${esc(m.code)}','${bl?'active':'blocked'}')" style="flex:1;border:1px solid ${bl?'#B6EDDF':'#F3C9C9'};background:${bl?'#EAFBF6':'#FDECEC'};border-radius:9px;padding:8px;font-size:11px;font-weight:800;cursor:pointer;color:${bl?'#0A6E5D':'#C74848'}">${bl?'Mở khoá':'Khoá'}</button>
+          <button onclick="adminDelete('${esc(m.code)}','${esc((m.name||'').replace(/'/g,''))}')" style="flex:0 0 44px;border:1px solid #E3E8EE;background:#fff;border-radius:9px;padding:8px;font-size:13px;cursor:pointer;color:#C74848">🗑️</button>
+        </div></div>`; });
+    body=`<div style="padding:14px 16px 0"><div style="font-size:12px;color:#5C6B7A;font-weight:800;margin-bottom:10px">Tổng ${(UI.members||[]).length} tài khoản</div>${list||'<p style="color:#5C6B7A;font-size:12.5px;font-weight:600">Chưa có thành viên nào.</p>'}</div>`;
+  } else {
+    let rows='';
+    (UI.activity||[]).forEach(a=>{ rows+=`<div style="display:flex;gap:10px;padding:10px 12px;background:#fff;border:1px solid #E3E8EE;border-radius:11px;margin-bottom:6px"><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800">${evLabel(a.event)} <span style="color:#5C6B7A;font-weight:700">${esc(a.name||'')}</span></div>${a.detail?`<div style="font-size:11px;color:#5C6B7A;font-weight:600;margin-top:1px">${esc(a.detail)}</div>`:''}</div><div style="font-size:10.5px;color:#8A97A5;font-weight:700;white-space:nowrap">${esc(a.time||'')}</div></div>`; });
+    body=`<div style="padding:14px 16px 0">${UI.activity?(rows||'<p style="color:#5C6B7A;font-size:12.5px;font-weight:600">Chưa có hoạt động.</p>'):'<p style="color:#5C6B7A;font-size:12.5px;font-weight:600;text-align:center;padding:20px 0">Đang tải nhật ký...</p>'}</div>`;
+  }
   return `<div style="animation:fade .25s">
-    <div style="padding:calc(env(safe-area-inset-top) + 20px) 18px 6px;display:flex;align-items:center;gap:10px"><button onclick="nav('home')" style="border:1px solid #E3E8EE;background:#fff;border-radius:11px;width:40px;height:40px;font-size:17px;cursor:pointer">‹</button><div><h1 style="margin:0;font-family:'Space Grotesk';font-size:20px;font-weight:700">🛡️ Cấp mã học viên</h1><p style="margin:1px 0 0;color:#5C6B7A;font-size:11.5px;font-weight:700">Tạo mã đăng nhập cho khách đã thanh toán</p></div></div>
+    <div style="padding:calc(env(safe-area-inset-top) + 20px) 18px 6px;display:flex;align-items:center;gap:10px"><button onclick="nav('home')" style="border:1px solid #E3E8EE;background:#fff;border-radius:11px;width:40px;height:40px;font-size:17px;cursor:pointer">‹</button><div><h1 style="margin:0;font-family:'Space Grotesk';font-size:20px;font-weight:700">🛡️ Quản trị</h1><p style="margin:1px 0 0;color:#5C6B7A;font-size:11.5px;font-weight:700">Tài khoản học viên & nhật ký hệ thống</p></div></div>
     <div style="margin:12px 16px 0;background:#fff;border:1px solid #E3E8EE;border-radius:18px;padding:16px">
-      <input id="newname" placeholder="Tên khách hàng" onkeydown="if(event.key==='Enter')adminCreate()" style="width:100%;background:#F5F8FA;border:1px solid #E3E8EE;border-radius:12px;padding:13px;font-size:15px;font-weight:600">
-      <button onclick="adminCreate()" ${UI.adminBusy?'disabled':''} style="width:100%;margin-top:10px;border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#0FB89B,#0A8C77);color:#fff;min-height:48px;opacity:${UI.adminBusy?.6:1}">${UI.adminBusy?'Đang tạo...':'+ Tạo mã đăng nhập'}</button>
+      <div style="font-size:12px;color:#5C6B7A;font-weight:800;margin-bottom:8px">Cấp mã thủ công</div>
+      <div style="display:flex;gap:8px"><input id="newname" placeholder="Tên khách hàng" onkeydown="if(event.key==='Enter')adminCreate()" style="flex:1;min-width:0;background:#F5F8FA;border:1px solid #E3E8EE;border-radius:12px;padding:12px;font-size:14px;font-weight:600">
+      <button onclick="adminCreate()" ${UI.adminBusy?'disabled':''} style="flex:0 0 96px;border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#0FB89B,#0A8C77);color:#fff;opacity:${UI.adminBusy?.6:1}">${UI.adminBusy?'...':'+ Tạo mã'}</button></div>
       ${nc?`<div style="margin-top:12px;background:#EAFBF6;border:1px solid #B6EDDF;border-radius:13px;padding:14px;text-align:center"><div style="font-size:11.5px;color:#0A6E5D;font-weight:800">MÃ CHO ${esc((nc.name||'').toUpperCase())}</div><div style="font-family:'Space Grotesk';font-size:26px;font-weight:700;letter-spacing:3px;margin:4px 0">${esc(nc.code)}</div><button onclick="copyCode('${esc(nc.code)}')" style="border:1px solid #B6EDDF;background:#fff;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:800;cursor:pointer;color:#0A6E5D">Copy mã gửi khách</button></div>`:''}
     </div>
-    <div style="padding:16px 16px 0"><h3 style="font-family:'Space Grotesk';font-size:14px;margin:0 0 10px">Thành viên (${(UI.members||[]).length})</h3>${list||'<p style="color:#5C6B7A;font-size:12.5px;font-weight:600">Chưa có thành viên.</p>'}</div>
+    <div style="margin:14px 16px 0;background:#EEF2F6;border-radius:13px;padding:4px;display:flex;gap:4px">${tabBtn('members','👥 Tài khoản')}${tabBtn('activity','📜 Nhật ký')}</div>
+    ${body}
     <div style="height:34px"></div>
   </div>`;
 }
@@ -358,6 +385,7 @@ function nav(v){ sfx('tap'); UI.view=v; if(v==='quiz') render(); else render(); 
 function complete(n){
   if(isDone(n)){ n<29?openLesson(n+1):goHome(); return; }
   S.done.push(n); S.bounty+=B_LESSON;
+  if(CODE_MODE&&MEMBER&&MEMBER.role==='member'){ try{ api({action:'event',code:MEMBER.code,event:'done-lesson',detail:'Buổi '+n+' — '+LESSONS[n].title}); }catch(e){} }
   const today=new Date().toDateString();
   if(S.last!==today){ const y=new Date(Date.now()-86400000).toDateString(); S.streak=(S.last===y)?S.streak+1:1; S.last=today; }
   save(); confettiRain(); sfx('chest');
