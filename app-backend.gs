@@ -24,8 +24,7 @@ var MEMBERS = 'Members';
 var ACTIVITY = 'Activity';
 var FOLDER_NAME = 'EQ GYM - Bang chung CK';
 var SHEET_NAME = 'EQ GYM - He thong';
-var M_HEAD = ['Mã', 'Tên', 'SĐT', 'Điểm', 'Vai trò', 'Trạng thái', 'Tạo lúc', 'HĐ gần nhất', 'Địa chỉ', 'Link CK', 'Phiên'];
-var PROGRESS_FOLDER_NAME = 'EQ GYM - Progress';
+var M_HEAD = ['Mã', 'Tên', 'SĐT', 'Điểm', 'Vai trò', 'Trạng thái', 'Tạo lúc', 'HĐ gần nhất', 'Địa chỉ', 'Link CK', 'Phiên', 'Tiến độ'];
 var A_HEAD = ['Thời gian', 'Mã', 'Tên', 'Sự kiện', 'Chi tiết'];
 var ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
@@ -71,31 +70,23 @@ function apiLogin(d) {
   sh(MEMBERS).getRange(m.row, 11).setValue(session); // đăng nhập mới -> đá thiết bị cũ
   return { ok: true, role: 'member', name: m.name, points: m.points, session: session, progress: loadProgress(m.code) };
 }
-/* ===== Đồng bộ tiến độ học (Drive JSON theo mã) + phiên 1 thiết bị ===== */
-function progressFolder() {
-  var props = PropertiesService.getScriptProperties(), id = props.getProperty('PROGRESS_FOLDER_ID');
-  if (id) { try { return DriveApp.getFolderById(id); } catch (e) {} }
-  var it = DriveApp.getFoldersByName(PROGRESS_FOLDER_NAME), f = it.hasNext() ? it.next() : DriveApp.createFolder(PROGRESS_FOLDER_NAME);
-  props.setProperty('PROGRESS_FOLDER_ID', f.getId()); return f;
-}
+/* ===== Đồng bộ tiến độ học (lưu thẳng ô Sheet cột 12) + phiên 1 thiết bị ===== */
 function loadProgress(code) {
-  try { var it = progressFolder().getFilesByName('p_' + norm(code) + '.json'); if (it.hasNext()) return JSON.parse(it.next().getBlob().getDataAsString('UTF-8')); } catch (e) {}
+  try { var m = findByCode(code); if (m && m.data) return JSON.parse(m.data); } catch (e) {}
   return null;
 }
 function validSession(m, session) { return !!m && String(m.session || '') !== '' && String(session || '') === String(m.session); }
 function apiSaveProgress(d) {
   var m = findByCode(d.code); if (!m) return { ok: false, error: 'unauthorized' };
   if (!validSession(m, d.session)) return { ok: false, error: 'session' };
+  var lock = LockService.getScriptLock(); try { lock.waitLock(5000); } catch (e) {}
   try {
-    var folder = progressFolder(), name = 'p_' + m.code + '.json', content = JSON.stringify(d.data || {});
-    var it = folder.getFilesByName(name); while (it.hasNext()) it.next().setTrashed(true);
-    folder.createFile(name, content, 'application/json');
-  } catch (e) {}
-  try {
+    var content = JSON.stringify(d.data || {});
+    sh(MEMBERS).getRange(m.row, 12).setValue(content);
     var pts = Math.max(m.points, Math.floor(Number(d.data && d.data.bounty) || 0));
     sh(MEMBERS).getRange(m.row, 4).setValue(pts);
     sh(MEMBERS).getRange(m.row, 8).setValue(now());
-  } catch (e) {}
+  } catch (e) {} finally { try { lock.releaseLock(); } catch (e) {} }
   return { ok: true };
 }
 function apiLoadProgress(d) {
@@ -250,9 +241,9 @@ function sh(name) {
 }
 function members() {
   var t = sh(MEMBERS), last = t.getLastRow(); if (last < 2) return [];
-  var v = t.getRange(2, 1, last - 1, 11).getValues(), out = [];
+  var v = t.getRange(2, 1, last - 1, 12).getValues(), out = [];
   for (var i = 0; i < v.length; i++) { if (!v[i][0]) continue;
-    out.push({ row: i + 2, code: norm(v[i][0]), name: v[i][1], phone: String(v[i][2] || '').replace(/^'/, ''), points: Math.floor(Number(v[i][3]) || 0), role: v[i][4], status: v[i][5] || 'active', created: v[i][6], last: v[i][7], session: v[i][10] }); }
+    out.push({ row: i + 2, code: norm(v[i][0]), name: v[i][1], phone: String(v[i][2] || '').replace(/^'/, ''), points: Math.floor(Number(v[i][3]) || 0), role: v[i][4], status: v[i][5] || 'active', created: v[i][6], last: v[i][7], session: v[i][10], data: v[i][11] }); }
   return out;
 }
 function findByCode(c) { c = norm(c); if (!c) return null; var a = members(); for (var i = 0; i < a.length; i++) if (a[i].code === c) return a[i]; return null; }

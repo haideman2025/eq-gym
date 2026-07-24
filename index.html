@@ -74,7 +74,16 @@ function memberSession(){ try{ return localStorage.getItem('eqgym_session')||'';
 function handleKick(d){ if(d&&d.ok===false&&(d.error==='session'||d.error==='blocked')){ kickedLogout(d.error); return true; } return false; }
 function kickedLogout(reason){ MEMBER=null; try{ localStorage.removeItem('eqgym_code'); localStorage.removeItem('eqgym_session'); }catch(e){} stopHeartbeat(); stopRankRefresh(); UI.settingsOpen=false; UI.view='home'; UI.loginErr=(reason==='blocked')?'Tài khoản của bạn đã bị tạm khoá. Liên hệ admin để mở lại.':'Bạn vừa đăng nhập ở thiết bị khác. Mỗi tài khoản chỉ dùng 1 thiết bị cùng lúc — để bạn tập trung & chánh niệm khi học.'; render(); }
 let _saT=null;
-function syncAll(){ if(!CODE_MODE||!MEMBER||MEMBER.role!=='member') return; clearTimeout(_saT); _saT=setTimeout(async()=>{ try{ const d=await api({action:'saveProgress',code:MEMBER.code,session:MEMBER.session,data:S}); handleKick(d); }catch(e){} },2500); }
+function trimForSync(){
+  const cap=(s,n)=>{ s=(s==null?'':String(s)); return s.length>n?s.slice(0,n):s; };
+  const hist={}; Object.keys(S.history||{}).forEach(k=>{ hist[k]=(S.history[k]||[]).slice(0,8).map(x=>({ts:x.ts,score:x.score,dims:x.dims,by:x.by})); });
+  const ans={}; Object.keys(S.ans||{}).forEach(k=>{ if(S.ans[k]) ans[k]=cap(S.ans[k],500); });
+  const scores={}; Object.keys(S.scores||{}).forEach(k=>{ const x=S.scores[k]||{}; scores[k]={score:x.score,dims:x.dims,by:x.by,feedback:cap(x.feedback,220),tip:cap(x.tip,160)}; });
+  let out={done:S.done,graded:S.graded,streak:S.streak,last:S.last,bounty:S.bounty,practices:S.practices,quiz:S.quiz,qans:S.qans,scen:S.scen,scores:scores,ans:ans,history:hist};
+  try{ if(JSON.stringify(out).length>45000){ out.ans={}; } if(JSON.stringify(out).length>45000){ out.history={}; } }catch(e){}
+  return out;
+}
+function syncAll(){ if(!CODE_MODE||!MEMBER||MEMBER.role!=='member') return; clearTimeout(_saT); _saT=setTimeout(async()=>{ try{ const d=await api({action:'saveProgress',code:MEMBER.code,session:MEMBER.session,data:trimForSync()}); handleKick(d); }catch(e){} },2500); }
 function syncPoints(){ syncAll(); }
 let _hb=null;
 function startHeartbeat(){ stopHeartbeat(); if(!CODE_MODE||!MEMBER||MEMBER.role!=='member') return; _hb=setInterval(async()=>{ try{ const d=await api({action:'ping',code:MEMBER.code,session:MEMBER.session}); handleKick(d); }catch(e){} },20000); }
@@ -85,8 +94,8 @@ function stopRankRefresh(){ if(_rankT){ clearInterval(_rankT); _rankT=null; } }
 function applyProgress(p){ try{ p=p||{}; const L=S, m=Object.assign(dflt(),p);
   m.done=[...new Set([...(p.done||[]),...(L.done||[])])];
   m.bounty=Math.max(p.bounty||0,L.bounty||0); m.streak=Math.max(p.streak||0,L.streak||0); m.practices=Math.max(p.practices||0,L.practices||0); m.last=p.last||L.last;
-  ['ans','scores','graded','scen','qans'].forEach(k=>{ m[k]=Object.assign({},L[k]||{},p[k]||{}); });
-  m.history=Object.assign({},L.history||{},p.history||{}); m.chat=(p.chat&&p.chat.length)?p.chat:(L.chat||[]); m.quiz=p.quiz||L.quiz;
+  ['ans','scores','graded','scen','qans'].forEach(k=>{ m[k]=Object.assign({},p[k]||{},L[k]||{}); });
+  m.history=Object.assign({},p.history||{},L.history||{}); m.chat=(L.chat&&L.chat.length)?L.chat:(p.chat||[]); m.quiz=p.quiz||L.quiz;
   S=m; try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){ _mem=S; }
 }catch(e){} }
 async function doLogin(){
