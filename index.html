@@ -52,6 +52,90 @@ const BACKEND=!!(SUPA_URL && SUPA_ANON && window.supabase);
 let sb=BACKEND ? window.supabase.createClient(SUPA_URL,SUPA_ANON) : null;
 let AUTH=null;
 
+/* ================================================================
+   🔐 APP BACKEND (Apps Script) — mã đăng nhập + Gemini ẩn + điểm + thi đua
+   Dán URL web app (app-backend.gs) vào APP_BACKEND. Trống = chế độ mở (local).
+   Xem SETUP-APP-BACKEND.md
+   ================================================================ */
+const APP_BACKEND="";
+const CODE_MODE=!!APP_BACKEND;
+let MEMBER=null; // {code,name,points,role}
+function memberCode(){ try{ return localStorage.getItem('eqgym_code')||''; }catch(e){ return ''; } }
+async function api(payload){ const r=await fetch(APP_BACKEND,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}); return await r.json(); }
+function aiReady(){ return (CODE_MODE && MEMBER) || !!getKey(); }
+async function geminiFetch(body){
+  if(CODE_MODE && MEMBER){ const d=await api({action:'ai',code:MEMBER.code,body}); if(!d||!d.ok||!d.gemini) throw new Error((d&&d.error)||'AI proxy lỗi'); return d.gemini; }
+  const key=getKey(); if(!key) throw new Error('no key');
+  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error('HTTP '+r.status); return await r.json();
+}
+let _psT=null;
+function syncPoints(){ if(!CODE_MODE||!MEMBER||MEMBER.role!=='member') return; clearTimeout(_psT); _psT=setTimeout(async()=>{ try{ const d=await api({action:'sync',code:MEMBER.code,points:S.bounty}); if(d&&d.ok) MEMBER.points=d.points; }catch(e){} },1500); }
+async function doLogin(){
+  const code=(val('logincode')||'').trim().toUpperCase(); if(!code){ UI.loginErr='Nhập mã đăng nhập'; render(); return; }
+  UI.loginBusy=true; UI.loginErr=''; render();
+  try{ const d=await api({action:'login',code});
+    if(!d||!d.ok){ UI.loginBusy=false; UI.loginErr=(d&&d.error)||'Mã không đúng'; render(); return; }
+    MEMBER={code,name:d.name,points:d.points||0,role:d.role};
+    try{ localStorage.setItem('eqgym_code',code); }catch(e){}
+    if(d.role==='member'){ S.bounty=d.points||0; save(); }
+    UI.loginBusy=false; UI.loginErr=''; UI.view='home'; sfx('success'); render();
+  }catch(e){ UI.loginBusy=false; UI.loginErr='Lỗi kết nối, thử lại'; render(); }
+}
+function logoutMember(){ MEMBER=null; try{ localStorage.removeItem('eqgym_code'); }catch(e){} UI.settingsOpen=false; UI.view='home'; render(); }
+function openRank(){ sfx('tap'); UI.view='rank'; UI.rankData=null; render(); loadRank(); window.scrollTo(0,0); }
+async function loadRank(){ try{ const d=await api({action:'leaderboard',code:MEMBER.code}); if(d&&d.ok){ UI.rankData=d; render(); } }catch(e){} }
+function openAdminCode(){ sfx('tap'); UI.settingsOpen=false; UI.view='admincode'; UI.newCode=null; UI.members=undefined; render(); loadMembers(); window.scrollTo(0,0); }
+async function adminCreate(){ const name=(val('newname')||'').trim(); if(!name){ toast('Nhập tên khách'); return; } UI.adminBusy=true; render(); try{ const d=await api({action:'createCode',admin:MEMBER.code,name}); if(d&&d.ok){ UI.newCode=d; UI.adminBusy=false; loadMembers(); render(); toast('Đã tạo mã cho '+d.name); } else { UI.adminBusy=false; toast((d&&d.error)||'Lỗi'); render(); } }catch(e){ UI.adminBusy=false; toast('Lỗi kết nối'); render(); } }
+async function loadMembers(){ try{ const d=await api({action:'listMembers',admin:MEMBER.code}); if(d&&d.ok){ UI.members=d.members; render(); } }catch(e){} }
+function copyCode(c){ try{ navigator.clipboard.writeText(c); toast('Đã copy mã '+c); }catch(e){} }
+function viewLogin(){
+  return `<div style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:32px 24px;background:linear-gradient(160deg,#0F1923,#0A6E5D 135%)">
+    <div style="text-align:center;color:#fff">
+      <div style="width:76px;height:76px;margin:0 auto;border-radius:22px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center">${LOGOW}</div>
+      <h1 style="font-family:'Space Grotesk';font-size:26px;font-weight:700;margin:18px 0 2px">EQ <span style="color:#0FB89B">GYM</span></h1>
+      <p style="color:#B9C6D4;font-size:13px;font-weight:600;margin:0">Phòng tập cảm xúc · 30 ngày</p>
+    </div>
+    <div style="background:#fff;border-radius:22px;padding:22px 18px;margin-top:26px;box-shadow:0 18px 44px rgba(0,0,0,.3)">
+      <h2 style="font-family:'Space Grotesk';font-size:17px;font-weight:700;margin:0 0 4px">Nhập mã đăng nhập</h2>
+      <p style="color:#5C6B7A;font-size:12.5px;font-weight:600;line-height:1.6;margin:0 0 14px">Mã do quản trị viên EQ GYM cấp sau khi xác nhận thanh toán. Chưa có mã? Liên hệ admin để được cấp.</p>
+      <input id="logincode" type="text" autocapitalize="characters" placeholder="VD: EQ7K9M2" value="${esc(memberCode())}" onkeydown="if(event.key==='Enter')doLogin()" style="width:100%;background:#F5F8FA;border:1px solid #E3E8EE;border-radius:13px;padding:15px;font-size:17px;font-weight:800;letter-spacing:2px;text-align:center;text-transform:uppercase">
+      ${UI.loginErr?`<p style="color:#E85B5B;font-size:12.5px;font-weight:700;margin:10px 0 0;text-align:center">${esc(UI.loginErr)}</p>`:''}
+      <button onclick="doLogin()" ${UI.loginBusy?'disabled':''} style="width:100%;margin-top:14px;border:none;border-radius:14px;padding:16px;font-size:15px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#0FB89B,#0A8C77);color:#fff;min-height:52px;opacity:${UI.loginBusy?.6:1}">${UI.loginBusy?'Đang kiểm tra...':'Vào phòng tập →'}</button>
+    </div>
+  </div>`;
+}
+function viewRank(){
+  const d=UI.rankData; let rows='';
+  if(d&&d.top){ if(!d.top.length) rows=`<p style="text-align:center;color:#5C6B7A;font-weight:600;padding:30px 0">Chưa có dữ liệu thi đua.</p>`;
+    d.top.forEach(m=>{ const medal=m.rank===1?'🥇':m.rank===2?'🥈':m.rank===3?'🥉':('#'+m.rank); const me=d.me&&d.me.rank===m.rank;
+      rows+=`<div style="display:flex;align-items:center;gap:12px;background:${me?'#EAFBF6':'#fff'};border:1px solid ${me?'#0FB89B':'#E3E8EE'};border-radius:14px;padding:12px 14px;margin-bottom:8px">
+        <div style="width:38px;text-align:center;font-family:'Space Grotesk';font-weight:700;font-size:${m.rank<=3?'20px':'14px'};color:${m.rank<=3?'#0F1923':'#5C6B7A'}">${medal}</div>
+        <div style="flex:1;min-width:0;font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.name)}${me?' <span style=\"color:#0A6E5D;font-size:11px\">(bạn)</span>':''}</div>
+        <div style="font-family:'Space Grotesk';font-weight:700;color:#0A6E5D">${fmt(m.points)}<span style="font-size:10px;color:#7FA39B;font-weight:700"> EP</span></div></div>`; });
+  } else rows=`<p style="text-align:center;color:#5C6B7A;font-weight:600;padding:30px 0">Đang tải bảng thi đua...</p>`;
+  return `<div style="animation:fade .25s">
+    <div style="padding:calc(env(safe-area-inset-top) + 20px) 18px 6px"><h1 style="margin:0;font-family:'Space Grotesk';font-size:22px;font-weight:700">🏆 Đảo Thi Đua</h1><p style="margin:2px 0 0;color:#5C6B7A;font-size:12px;font-weight:700;letter-spacing:.3px">Xếp hạng theo tổng điểm rèn luyện (EP)${d&&d.total?' · '+d.total+' thành viên':''}</p></div>
+    ${d&&d.me?`<div style="margin:12px 16px 0;background:linear-gradient(150deg,#0F1923,#0A8C77 130%);border-radius:18px;padding:16px 18px;color:#fff;display:flex;align-items:center;gap:14px"><div style="font-family:'Space Grotesk';font-size:26px;font-weight:700">#${d.me.rank}</div><div style="flex:1"><div style="font-weight:800;font-size:15px">${esc(d.me.name)}</div><div style="color:#BFEFE4;font-size:12px;font-weight:700">Hạng của bạn</div></div><div style="font-family:'Space Grotesk';font-size:20px;font-weight:700;color:#BFEFE4">${fmt(d.me.points)} EP</div></div>`:''}
+    <div style="padding:14px 16px 0">${rows}</div>
+    <div style="padding:6px 16px 24px"><button onclick="loadRank()" style="width:100%;border:1px solid #E3E8EE;border-radius:13px;padding:12px;font-size:13px;font-weight:800;background:#fff;cursor:pointer;color:#0F1923">↻ Làm mới</button></div>
+  </div>`;
+}
+function viewAdminCode(){
+  const nc=UI.newCode; let list='';
+  (UI.members||[]).forEach(m=>{ list+=`<div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #E3E8EE;border-radius:12px;padding:11px 13px;margin-bottom:7px"><div style="flex:1;min-width:0"><b style="font-size:13.5px">${esc(m.name)}</b><div style="font-family:'Space Grotesk';font-size:12px;color:#0A6E5D;font-weight:700">${esc(m.code)}</div></div><div style="font-family:'Space Grotesk';font-weight:700;color:#5C6B7A;font-size:13px">${fmt(m.points)} EP</div><button onclick="copyCode('${esc(m.code)}')" style="border:1px solid #E3E8EE;background:#F5F8FA;border-radius:9px;padding:7px 10px;font-size:11px;font-weight:800;cursor:pointer;color:#0A6E5D">Copy</button></div>`; });
+  return `<div style="animation:fade .25s">
+    <div style="padding:calc(env(safe-area-inset-top) + 20px) 18px 6px;display:flex;align-items:center;gap:10px"><button onclick="nav('home')" style="border:1px solid #E3E8EE;background:#fff;border-radius:11px;width:40px;height:40px;font-size:17px;cursor:pointer">‹</button><div><h1 style="margin:0;font-family:'Space Grotesk';font-size:20px;font-weight:700">🛡️ Cấp mã học viên</h1><p style="margin:1px 0 0;color:#5C6B7A;font-size:11.5px;font-weight:700">Tạo mã đăng nhập cho khách đã thanh toán</p></div></div>
+    <div style="margin:12px 16px 0;background:#fff;border:1px solid #E3E8EE;border-radius:18px;padding:16px">
+      <input id="newname" placeholder="Tên khách hàng" onkeydown="if(event.key==='Enter')adminCreate()" style="width:100%;background:#F5F8FA;border:1px solid #E3E8EE;border-radius:12px;padding:13px;font-size:15px;font-weight:600">
+      <button onclick="adminCreate()" ${UI.adminBusy?'disabled':''} style="width:100%;margin-top:10px;border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#0FB89B,#0A8C77);color:#fff;min-height:48px;opacity:${UI.adminBusy?.6:1}">${UI.adminBusy?'Đang tạo...':'+ Tạo mã đăng nhập'}</button>
+      ${nc?`<div style="margin-top:12px;background:#EAFBF6;border:1px solid #B6EDDF;border-radius:13px;padding:14px;text-align:center"><div style="font-size:11.5px;color:#0A6E5D;font-weight:800">MÃ CHO ${esc((nc.name||'').toUpperCase())}</div><div style="font-family:'Space Grotesk';font-size:26px;font-weight:700;letter-spacing:3px;margin:4px 0">${esc(nc.code)}</div><button onclick="copyCode('${esc(nc.code)}')" style="border:1px solid #B6EDDF;background:#fff;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:800;cursor:pointer;color:#0A6E5D">Copy mã gửi khách</button></div>`:''}
+    </div>
+    <div style="padding:16px 16px 0"><h3 style="font-family:'Space Grotesk';font-size:14px;margin:0 0 10px">Thành viên (${(UI.members||[]).length})</h3>${list||'<p style="color:#5C6B7A;font-size:12.5px;font-weight:600">Chưa có thành viên.</p>'}</div>
+    <div style="height:34px"></div>
+  </div>`;
+}
+
 /* ===== Thanh toán / cộng đồng (Premium) ===== */
 const BANK={ bank_code:"", account_no:"", account_name:"" };
 const COMMUNITY_URL="";
@@ -155,7 +239,7 @@ function dflt(){ return {done:[],ans:{},scores:{},graded:{},streak:0,last:null,b
 let S=load();
 let UI={view:'home',n:null,step:0,settingsOpen:false,musicOpen:false,premOpen:false,payOpen:false,treasure:null,toastMsg:'',grading:false,scenLoading:false,mp4Ok:null,openZones:null,chatTyping:false,chatInput:'',keyInput:''};
 let snd; try{ snd=Object.assign({bgm:true,sfx:true,track:0,vol:0.5}, JSON.parse(localStorage.getItem('eqgym_sound_v1'))||{}); }catch(e){ snd={bgm:true,sfx:true,track:0,vol:0.5}; }
-function save(){ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){ _mem=S; } scheduleSync(); }
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){ _mem=S; } scheduleSync(); syncPoints(); }
 function saveSnd(){ try{ localStorage.setItem('eqgym_sound_v1',JSON.stringify(snd)); }catch(e){} }
 
 /* ===== ĐỒNG BỘ SUPABASE (no-op ở local) ===== */
@@ -305,20 +389,18 @@ const REFLECT_BANK={
 };
 async function genScenario(n){
   UI.scenLoading=true; render(); sfx('pop');
-  const l=LESSONS[n], key=getKey(), ref=practiceKind(n)==='reflect';
+  const l=LESSONS[n], ref=practiceKind(n)==='reflect';
   let sc=null;
-  if(key){ try{ sc=await scenarioGemini(key,l,ref); }catch(e){ console.warn(e); } }
+  if(aiReady()){ try{ sc=await scenarioGemini(l,ref); }catch(e){ console.warn(e); } }
   if(!sc){ const src=ref?(REFLECT_BANK[l.module]||REFLECT_BANK[2]):(SCEN_BANK[l.module]||SCEN_BANK[1]); sc=src[Math.floor(Math.random()*src.length)]; }
   S.scen[n]=sc; save(); UI.scenLoading=false; render();
 }
-async function scenarioGemini(key,l,ref){
+async function scenarioGemini(l,ref){
   const prompt=ref
    ?`Bạn là "Coach AI" của EQ GYM — phòng tập cảm xúc. Hãy đặt MỘT góc PHẢN CHIẾU sâu sắc giúp học viên nhìn lại chính mình, phù hợp với chủ đề bài học bên dưới. Gần gũi, khơi gợi, ngôi thứ hai ("bạn"). Chủ đề: ${l.title}. Mục tiêu: ${(l.objectives&&l.objectives.join('; '))||l.subtitle||''}. Trả về DUY NHẤT JSON: {"body":"<1-2 câu dẫn dắt>","question":"<1 câu hỏi phản chiếu>"}`
    :`Bạn là "Coach AI" của EQ GYM — phòng tập cảm xúc. Hãy tạo MỘT tình huống đời thực NGẮN GỌN 2-4 câu, sát chủ đề bài học, để học viên luyện phản ứng cảm xúc (EQ). Kèm 1 câu hỏi thực hành, ngôi thứ hai ("bạn"). Chủ đề: ${l.title}. Mục tiêu: ${(l.objectives&&l.objectives.join('; '))||l.subtitle||''}. Trả về DUY NHẤT JSON: {"body":"<tình huống 2-4 câu>","question":"<1 câu hỏi thực hành>"}`;
   const body={contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:1.0,responseMimeType:'application/json'}};
-  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  const j=await r.json(); const o=JSON.parse(j.candidates[0].content.parts[0].text);
+  const j=await geminiFetch(body); const o=JSON.parse(j.candidates[0].content.parts[0].text);
   return {body:o.body||'',question:o.question||''};
 }
 
@@ -331,8 +413,8 @@ async function grade(n){
   const prompt=ps?ps.items.map(i=>i.t).join('\n').slice(0,800):(REFLECT_PROMPTS[n]||l.subtitle||'');
   const sco=S.scen[n]; const scen=sco?((sco.body||sco)+(sco.question?' '+sco.question:'')):'';
   const focus=lessonFocus(n);
-  let res=null; const key=getKey();
-  if(key){ try{ res=await gradeGemini(key,l,prompt,ans,scen,focus); }catch(e){ console.warn(e); } }
+  let res=null;
+  if(aiReady()){ try{ res=await gradeGemini(l,prompt,ans,scen,focus); }catch(e){ console.warn(e); } }
   if(!res) res=gradeOffline(ans,focus);
   S.scores[n]=res;
   S.history[n]=S.history[n]||[];
@@ -347,7 +429,7 @@ async function grade(n){
   sfx(res.score>=60?'success':'pop');
   if(earn>0) toast('+'+fmt(earn)+' EP điểm rèn luyện!');
 }
-async function gradeGemini(key,l,prompt,ans,scen,focus){
+async function gradeGemini(l,prompt,ans,scen,focus){
   const scenLine=scen?`\nTÌNH HUỐNG/CÂU HỎI ĐANG LUYỆN: ${scen.slice(0,700)}`:'';
   const body={contents:[{parts:[{text:
 `Bạn là "Coach AI" của EQ GYM — huấn luyện viên trí tuệ cảm xúc (EQ) chuyên nghiệp, khoa học, ấm áp và thẳng thắn, nói tiếng Việt, xưng "Coach", gọi học viên là "bạn".
@@ -365,9 +447,7 @@ BÀI LÀM: """${ans.slice(0,2500)}"""
 
 Trả về DUY NHẤT JSON: {"aware":<0-25>,"real":<0-25>,"choice":<0-25>,"empath":<0-25>,"feedback":"<3-4 câu giọng Coach ấm áp, khen trụ mạnh, chỉ trụ cần luyện>","tip":"<1 gợi ý nâng trụ yếu nhất>"}`}]}],
     generationConfig:{temperature:0.6,responseMimeType:'application/json'}};
-  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  const j=await r.json(); const o=JSON.parse(j.candidates[0].content.parts[0].text);
+  const j=await geminiFetch(body); const o=JSON.parse(j.candidates[0].content.parts[0].text);
   const dims=clampDims(o); const score=dims.aware+dims.real+dims.choice+dims.empath;
   return {score,dims,feedback:o.feedback||'',tip:o.tip||'',by:'ai'};
 }
@@ -422,13 +502,13 @@ function quickAsk(i){ sendChat(QUICK[i]); }
 async function sendChat(text){
   text=(text==null?(UI.chatInput||''):text).trim(); if(!text||UI.chatTyping) return;
   sfx('send'); S.chat.push({role:'user',text}); save(); UI.chatInput=''; UI.chatTyping=true; render(); scrollChatDown();
-  let reply=null; const key=getKey();
-  if(key){ try{ reply=await assistantGemini(key); }catch(e){ console.warn(e); } }
+  let reply=null;
+  if(aiReady()){ try{ reply=await assistantGemini(); }catch(e){ console.warn(e); } }
   if(!reply) reply=assistantOffline(text);
   S.chat.push({role:'model',text:reply}); if(S.chat.length>60) S.chat=S.chat.slice(-60); save();
   UI.chatTyping=false; render(); scrollChatDown(); sfx('pop');
 }
-async function assistantGemini(key){
+async function assistantGemini(){
   const sys=`Bạn là "Coach AI" của ứng dụng EQ GYM — phòng tập cảm xúc. Bạn là huấn luyện viên trí tuệ cảm xúc (EQ) chuyên nghiệp nói tiếng Việt: khoa học, không huyền học, ấm áp, thực tế, cụ thể. Xưng "Coach", gọi người dùng là "bạn".
 Nhiệm vụ: giúp học viên HỌC và THỰC HÀNH EQ hiệu quả mỗi ngày. Bám sát 30 buổi của chương trình. Khi hợp lý: gợi ý buổi cụ thể, đưa một bài tập nhỏ hoặc tình huống để luyện, khích lệ duy trì thói quen. Trả lời NGẮN GỌN (3-6 câu), ấm áp, dễ áp dụng. Nếu người dùng đang xúc động, hãy công nhận cảm xúc trước rồi mới khuyên.
 
@@ -438,9 +518,7 @@ ${courseMap()}
 TIẾN ĐỘ HIỆN TẠI: ${progressSummary()}`;
   const contents=S.chat.slice(-16).map(m=>({role:m.role==='user'?'user':'model',parts:[{text:m.text}]}));
   const body={systemInstruction:{parts:[{text:sys}]},contents,generationConfig:{temperature:0.9}};
-  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  if(!r.ok) throw new Error('HTTP '+r.status);
-  const j=await r.json(); return j.candidates[0].content.parts.map(p=>p.text).join('').trim();
+  const j=await geminiFetch(body); return j.candidates[0].content.parts.map(p=>p.text).join('').trim();
 }
 function assistantOffline(text){
   const t=text.toLowerCase(); const nextN=[...Array(30).keys()].find(n=>!isDone(n)); const nx=nextN!=null?('Buổi '+nextN+' — '+LESSONS[nextN].title):'đã hoàn thành hết 30 buổi';
@@ -593,12 +671,15 @@ async function rejectPay(id){ try{ await sb.from('payments').update({status:'rej
 /* ===== RENDER ===== */
 function render(){
   const app=document.getElementById('app'); if(!app) return;
+  if(CODE_MODE && !MEMBER){ app.innerHTML=viewLogin(); return; }
   let main='';
   if(UI.view==='home') main=viewHome();
   else if(UI.view==='lesson') main=viewLesson();
   else if(UI.view==='journal') main=viewJournal();
   else if(UI.view==='chat') main=viewChat();
   else if(UI.view==='quiz') main=viewQuiz();
+  else if(UI.view==='rank') main=viewRank();
+  else if(UI.view==='admincode') main=viewAdminCode();
   else if(UI.view==='admin') main=viewAdmin();
   const wrap=`<div style="min-height:100vh;max-width:480px;margin:0 auto;position:relative;background:#F5F8FA;box-shadow:0 0 40px rgba(15,25,35,.08);padding-bottom:${UI.view==='lesson'?'calc(env(safe-area-inset-bottom) + 84px)':(UI.view==='chat'?'0':'calc(env(safe-area-inset-bottom) + 96px)')}">${main}</div>`;
   app.innerHTML=wrap+fixedUI();
@@ -756,7 +837,7 @@ function lessonPractice(n,step){
     <div><h4 style="margin:0;font-size:13.5px;color:#0A6E5D;font-weight:800">${res.by==='ai'?'Coach AI chấm':'Chấm offline (chưa có API key)'}</h4><div style="font-size:11px;color:#B27607;margin-top:2px;font-weight:800">${res.score>=80?'★★★ Xuất sắc':res.score>=55?'★★ Tốt':'★ Cần luyện thêm'} · Khung 4 trụ EQ</div></div></div>
     ${pillarBarsHtml(res.dims)}
     <div style="font-size:13.5px;margin-top:6px;line-height:1.65;color:#22303D">${esc(res.feedback)}</div>${res.tip?`<div style="font-size:12.5px;margin-top:9px;background:#fff;border-radius:11px;padding:9px 12px;border:1px dashed #0FB89B;line-height:1.55;color:#22303D"><b style="color:#0A6E5D">Gợi ý:</b> ${esc(res.tip)}</div>`:''}</div>`;
-  h+=`<div style="font-size:11.5px;color:#5C6B7A;margin-top:9px;line-height:1.55">${getKey()?'Coach AI (Gemini) sẵn sàng chấm bài.':'Chưa có API key Gemini — bài được chấm offline. Vào mục Tài khoản để thêm key (miễn phí).'}</div>`;
+  h+=`<div style="font-size:11.5px;color:#5C6B7A;margin-top:9px;line-height:1.55">${aiReady()?'Coach AI sẵn sàng chấm bài.':'Chưa bật AI — bài được chấm offline. Vào mục Tài khoản để thêm key (miễn phí).'}</div>`;
   const hist=S.history[n]||[];
   if(hist.length){ h+=`<div style="margin-top:16px"><div style="font-family:'Space Grotesk';font-size:10.5px;font-weight:700;letter-spacing:1.5px;color:#2F6FBF">LỊCH SỬ LUYỆN TẬP (${hist.length})</div>`;
     hist.slice(0,10).forEach(x=>{ h+=`<div style="margin-top:9px;background:#F5F8FA;border:1px solid #E3E8EE;border-radius:13px;padding:11px 13px"><div style="display:flex;gap:10px;font-size:11px;color:#5C6B7A;flex-wrap:wrap;font-weight:700"><span style="color:#B27607;font-weight:800;white-space:nowrap">★ ${x.score}/100</span><span style="white-space:nowrap">${x.by==='ai'?'AI':'offline'}</span><span style="white-space:nowrap">${fmtDate(x.ts)}</span></div>${x.scenario?`<div style="font-size:12px;color:#2F6FBF;margin-top:7px;line-height:1.55">◆ ${esc(clip(x.scenario,160))}</div>`:''}<div style="font-size:12.5px;color:#22303D;margin-top:7px;line-height:1.6;white-space:pre-wrap">${esc(clip(x.answer,400))}</div>${x.feedback?`<div style="font-size:12px;color:#5C6B7A;margin-top:7px;line-height:1.55">Coach: ${esc(clip(x.feedback,300))}</div>`:''}</div>`; });
@@ -789,7 +870,7 @@ function viewChat(){
   let h=`<div style="animation:fade .25s ease;display:flex;flex-direction:column;min-height:100vh">
     <div style="position:sticky;top:0;z-index:30;background:rgba(245,248,250,.95);backdrop-filter:blur(12px);border-bottom:1px solid #E3E8EE;padding:calc(env(safe-area-inset-top) + 14px) 16px 12px;display:flex;align-items:center;gap:12px">
       <div style="width:44px;height:44px;border-radius:50%;background:#fff;border:2px solid #0FB89B;display:flex;align-items:center;justify-content:center;flex:0 0 44px">${ring(26,'#0FB89B')}</div>
-      <div style="flex:1;min-width:0"><b style="font-family:'Space Grotesk';font-size:15px;display:block;font-weight:700">Coach AI</b><span style="font-size:11px;color:#5C6B7A;font-weight:600">${getKey()?'Gemini đang bật · đồng hành cùng bạn':'Chế độ offline · thêm key ở Tài khoản để bật AI'}</span></div>
+      <div style="flex:1;min-width:0"><b style="font-family:'Space Grotesk';font-size:15px;display:block;font-weight:700">Coach AI</b><span style="font-size:11px;color:#5C6B7A;font-weight:600">${aiReady()?'Coach AI đang bật · đồng hành cùng bạn':'Chế độ offline · thêm key ở Tài khoản để bật AI'}</span></div>
       <button onclick="clearChat()" style="width:44px;height:44px;border-radius:14px;background:#fff;border:1px solid #E3E8EE;color:#5C6B7A;font-size:15px;cursor:pointer">🗑</button></div>
     <div id="cmsgs" style="flex:1;display:flex;flex-direction:column;gap:10px;padding:16px 16px 170px;overflow-y:auto">`;
   msgs.forEach(m=>{ const me=m.role==='user'; h+=`<div style="display:flex;justify-content:${me?'flex-end':'flex-start'}"><div style="max-width:84%;background:${me?'linear-gradient(135deg,#0FB89B,#0A8C77)':'#fff'};color:${me?'#fff':'#22303D'};border:1px solid ${me?'transparent':'#E3E8EE'};border-radius:16px;padding:10px 14px;font-size:14px;line-height:1.65">${me?'':'<span style="display:block;font-family:Space Grotesk;font-size:9px;font-weight:700;letter-spacing:1.5px;color:#0A6E5D;margin-bottom:4px">COACH AI</span>'}<span style="white-space:pre-wrap">${esc(m.text)}</span></div></div>`; });
@@ -806,9 +887,11 @@ function viewChat(){
 function fixedUI(){
   let h='';
   if(UI.view!=='lesson'){
-    const items=[['home','⚑','Lộ trình'],['quiz','◈','Test EQ'],['chat','✦','Coach'],['journal','✎','Nhật ký'],['settings','⚙','Tài khoản']];
+    const items=[['home','⚑','Lộ trình'],['quiz','◈','Test EQ'],['chat','✦','Coach'],['journal','✎','Nhật ký']];
+    if(CODE_MODE) items.push(['rank','🏆','Thi đua']);
+    items.push(['settings','⚙','Tài khoản']);
     h+=`<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(255,255,255,.97);backdrop-filter:blur(14px);border-top:1px solid #E3E8EE;display:flex;padding:6px 0 calc(env(safe-area-inset-bottom) + 8px);z-index:40">`;
-    items.forEach(it=>{ const active=UI.view===it[0]; const on=it[0]==='settings'?'openSettings()':`nav('${it[0]}')`;
+    items.forEach(it=>{ const active=UI.view===it[0]; const on=it[0]==='settings'?'openSettings()':(it[0]==='rank'?'openRank()':`nav('${it[0]}')`);
       h+=`<button onclick="${on}" style="flex:1;text-align:center;background:none;border:none;color:${active?'#0A6E5D':'#5C6B7A'};font-size:10px;font-weight:800;display:flex;flex-direction:column;gap:3px;align-items:center;cursor:pointer;padding:6px 0;min-height:52px;letter-spacing:.3px"><span style="font-size:18px;line-height:1">${it[1]}</span>${it[2]}</button>`; });
     h+=`</div>`;
   } else {
@@ -829,6 +912,19 @@ function fixedUI(){
 }
 function sheet(inner){ return `<div onclick="if(event.target===this){UI.settingsOpen=false;UI.musicOpen=false;render()}" style="position:fixed;inset:0;background:rgba(15,25,35,.45);backdrop-filter:blur(6px);z-index:70;display:flex;align-items:flex-end;justify-content:center"><div style="background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:22px 20px calc(env(safe-area-inset-bottom) + 24px);animation:up .28s ease">${inner}</div></div>`; }
 function sheetSettings(){
+  if(CODE_MODE){
+    const m=MEMBER||{};
+    let h=`<h3 style="margin:2px 0 10px;font-family:'Space Grotesk';font-size:17px;font-weight:700">Tài khoản</h3>
+      <div style="background:linear-gradient(150deg,#0F1923,#0A8C77 130%);border-radius:16px;padding:15px 16px;color:#fff">
+        <div style="font-size:10.5px;color:#7FA39B;font-weight:800;letter-spacing:1.5px">THÀNH VIÊN EQ GYM${m.role==='admin'?' · ADMIN':''}</div>
+        <div style="font-size:18px;font-weight:800;margin-top:3px">${esc(m.name||'')}</div>
+        <div style="font-family:'Space Grotesk';font-size:12.5px;color:#BFEFE4;font-weight:700;margin-top:2px">Mã: ${esc(m.code||'')} · <span style="color:#fff">${fmt(S.bounty)} EP</span></div>
+      </div>
+      <p style="color:#5C6B7A;font-size:12px;line-height:1.6;margin:12px 2px 0;font-weight:600">✨ Coach AI đã bật sẵn (dùng chung của EQ GYM) — bạn chỉ việc luyện tập, không cần cấu hình gì thêm.</p>`;
+    if(m.role==='admin') h+=`<button onclick="openAdminCode()" style="width:100%;margin-top:14px;border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#0F1923,#0A6E5D);color:#fff;min-height:48px">🛡️ Cấp mã học viên</button>`;
+    h+=`<button onclick="logoutMember()" style="width:100%;margin-top:10px;border:1px solid #E3E8EE;border-radius:14px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;background:#fff;color:#5C6B7A;min-height:46px">Đăng xuất</button>`;
+    return sheet(h);
+  }
   return sheet(acctHtml()+`<h3 style="margin:6px 0 6px;font-family:'Space Grotesk';font-size:17px;font-weight:700">Coach AI (Gemini)</h3>
     <p style="color:#5C6B7A;font-size:12.5px;line-height:1.65;margin:0;font-weight:600">Dán <b style="color:#0F1923">API key Google Gemini</b> (miễn phí) để AI chấm điểm và nhận xét cá nhân hóa. Lấy key tại <b style="color:#0A6E5D">aistudio.google.com/apikey</b>. Key chỉ lưu trên máy bạn.</p>
     <input type="password" id="apikey" value="${esc(getKey())}" placeholder="Dán API key vào đây (AIza...)" style="width:100%;margin-top:14px;background:#F5F8FA;border:1px solid #E3E8EE;border-radius:13px;color:#0F1923;padding:14px;font-size:14px">
@@ -863,7 +959,8 @@ function clearChat(){ if(confirm('Xóa toàn bộ hội thoại với Coach AI?'
 document.addEventListener('pointerdown',function once(){ syncBgm(); }, {once:false});
 async function boot(){
   if(BACKEND){ try{ await initAuth(); }catch(e){ console.warn(e); } }
-  if(!S.quiz && (!S.done||!S.done.length)){ UI.view='quiz'; }
+  if(CODE_MODE){ const c=memberCode(); if(c){ try{ const d=await api({action:'login',code:c}); if(d&&d.ok){ MEMBER={code:c,name:d.name,points:d.points||0,role:d.role}; if(d.role==='member'){ S.bounty=d.points||0; save(); } } else { try{ localStorage.removeItem('eqgym_code'); }catch(e){} } }catch(e){} } }
+  if(!CODE_MODE && !S.quiz && (!S.done||!S.done.length)){ UI.view='quiz'; }
   render();
   syncDriveVideos();
 }
