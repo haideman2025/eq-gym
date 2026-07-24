@@ -110,6 +110,7 @@ function logRow(row) {
     if (sh.getLastRow() === 0) {
       sh.appendRow(['Loại', 'Thời gian', 'Họ tên', 'SĐT', 'Đối tượng', 'Địa chỉ', 'Link bằng chứng']);
     }
+    sh.getRange(1, 4, sh.getMaxRows(), 1).setNumberFormat('@'); // ép cột SĐT thành text để giữ số 0 đầu
     sh.appendRow(row);
   } catch (e) {}
 }
