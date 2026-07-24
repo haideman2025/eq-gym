@@ -21,27 +21,25 @@ Làm 1 lần, khoảng 15 phút. Làm theo đúng thứ tự dưới.
    - (Cách khác: gửi 1 tin trong nhóm rồi mở
      `https://api.telegram.org/bot<BOT_TOKEN>/getUpdates` trên trình duyệt, tìm `"chat":{"id":-100...}`.)
 
-## 2) Tạo nơi lưu trên Google Drive
+## 2) Nơi lưu trên Google Drive — KHÔNG cần tạo tay
 
-1. Tạo **1 thư mục Drive** (VD "EQ GYM - Bằng chứng CK") → mở thư mục →
-   copy **id** từ URL: `drive.google.com/drive/folders/`**`<ID_Ở_ĐÂY>`**
-2. Tạo **1 Google Sheet trống** (VD "EQ GYM - Đăng ký") → copy **id** từ URL:
-   `docs.google.com/spreadsheets/d/`**`<ID_Ở_ĐÂY>`**`/edit`
+Script **tự tạo** thư mục `EQ GYM 03 - Bang chung CK` và sheet `EQ GYM 03 - Dang ky`
+trong Drive của bạn ở lần chạy đầu. (Nếu muốn tự chỉ định, điền `DRIVE_FOLDER_ID`/`SHEET_ID`.)
 
 ## 3) Tạo Apps Script
 
 1. Vào **https://script.google.com** → **New project**.
 2. Xoá code mẫu, dán **toàn bộ** nội dung file `dangky/apps-script.gs`.
-3. Điền 4 giá trị vào khối `CONFIG` ở đầu:
+3. Chỉ cần điền **2 giá trị** vào khối `CONFIG` ở đầu:
    ```js
    var CONFIG = {
      TELEGRAM_BOT_TOKEN: '123456789:AAH....',
-     TELEGRAM_CHAT_ID:   '-1001234567890',
-     DRIVE_FOLDER_ID:    '<id thư mục Drive>',
-     SHEET_ID:           '<id Google Sheet>'
+     TELEGRAM_CHAT_ID:   '-1234567890',
+     DRIVE_FOLDER_ID:    '',   // để trống -> tự tạo
+     SHEET_ID:           ''    // để trống -> tự tạo
    };
    ```
-4. **Save** (Ctrl+S).
+4. **Save** (Ctrl+S). (Tuỳ chọn: chạy hàm `setup` một lần để tạo sẵn folder/sheet + cấp quyền.)
 
 ## 4) Deploy thành Web App
 

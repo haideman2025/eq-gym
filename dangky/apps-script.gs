@@ -6,7 +6,8 @@
  *
  * CÁCH DÙNG (chi tiết ở SETUP-BACKEND.md):
  *   1) script.google.com → New project → dán toàn bộ file này.
- *   2) Điền 4 giá trị trong CONFIG bên dưới.
+ *   2) Điền TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID trong CONFIG.
+ *      (DRIVE_FOLDER_ID + SHEET_ID để trống -> script TỰ TẠO folder & sheet lần đầu.)
  *   3) Deploy → New deployment → Web app
  *        - Execute as: Me
  *        - Who has access: Anyone
@@ -15,10 +16,13 @@
 
 var CONFIG = {
   TELEGRAM_BOT_TOKEN: '',   // token từ @BotFather, dạng "123456789:AA...."
-  TELEGRAM_CHAT_ID:   '',   // id nhóm Telegram, dạng "-1001234567890" (xem hướng dẫn)
-  DRIVE_FOLDER_ID:    '',   // id thư mục Drive lưu ảnh bằng chứng CK (lấy từ URL thư mục)
-  SHEET_ID:           ''    // id Google Sheet log đăng ký (tạo sheet trống, lấy id từ URL)
+  TELEGRAM_CHAT_ID:   '',   // id nhóm Telegram, dạng "-1234567890" (xem hướng dẫn)
+  DRIVE_FOLDER_ID:    '',   // (tuỳ chọn) id thư mục Drive lưu ảnh CK — trống = tự tạo
+  SHEET_ID:           ''    // (tuỳ chọn) id Google Sheet log đăng ký — trống = tự tạo
 };
+
+var FOLDER_NAME = 'EQ GYM 03 - Bang chung CK';
+var SHEET_NAME  = 'EQ GYM 03 - Dang ky';
 
 function doPost(e) {
   var out = { ok: false };
@@ -53,7 +57,7 @@ function handleLead(d) {
 /* ===== Bằng chứng chuyển khoản ===== */
 function handleProof(d) {
   var link = '';
-  if (d.image && CONFIG.DRIVE_FOLDER_ID) {
+  if (d.image) {
     var parts = String(d.image).split(',');
     var meta = parts[0] || '';
     var b64 = parts.length > 1 ? parts[1] : parts[0];
@@ -62,7 +66,7 @@ function handleProof(d) {
     var bytes = Utilities.base64Decode(b64);
     var fname = 'CK_' + String(d.phone || 'na').replace(/\D/g, '') + '_' + stamp() + '.' + ext;
     var blob = Utilities.newBlob(bytes, mime, fname);
-    var file = DriveApp.getFolderById(CONFIG.DRIVE_FOLDER_ID).createFile(blob);
+    var file = getFolder().createFile(blob);
     try { file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW); } catch (e) {}
     link = file.getUrl();
     logRow(['BẰNG CHỨNG CK', now(), d.name || '', d.phone || '', '', '', link]);
@@ -79,11 +83,30 @@ function handleProof(d) {
   return { ok: true, link: link };
 }
 
-/* ===== Google Sheet ===== */
+/* ===== Google Drive folder (tự tạo nếu chưa có) ===== */
+function getFolder() {
+  var props = PropertiesService.getScriptProperties();
+  var id = CONFIG.DRIVE_FOLDER_ID || props.getProperty('FOLDER_ID');
+  if (id) { try { return DriveApp.getFolderById(id); } catch (e) {} }
+  var it = DriveApp.getFoldersByName(FOLDER_NAME);
+  var folder = it.hasNext() ? it.next() : DriveApp.createFolder(FOLDER_NAME);
+  props.setProperty('FOLDER_ID', folder.getId());
+  return folder;
+}
+
+/* ===== Google Sheet (tự tạo nếu chưa có) ===== */
+function getSheet() {
+  var props = PropertiesService.getScriptProperties();
+  var id = CONFIG.SHEET_ID || props.getProperty('SHEET_ID');
+  if (id) { try { return SpreadsheetApp.openById(id).getSheets()[0]; } catch (e) {} }
+  var ss = SpreadsheetApp.create(SHEET_NAME);
+  props.setProperty('SHEET_ID', ss.getId());
+  return ss.getSheets()[0];
+}
+
 function logRow(row) {
-  if (!CONFIG.SHEET_ID) return;
   try {
-    var sh = SpreadsheetApp.openById(CONFIG.SHEET_ID).getSheets()[0];
+    var sh = getSheet();
     if (sh.getLastRow() === 0) {
       sh.appendRow(['Loại', 'Thời gian', 'Họ tên', 'SĐT', 'Đối tượng', 'Địa chỉ', 'Link bằng chứng']);
     }
@@ -112,6 +135,15 @@ function tgPhoto(blob, caption) {
       muteHttpExceptions: true
     });
   } catch (e) { tgText(caption); }
+}
+
+/* ===== (Tuỳ chọn) chạy tay 1 lần để tạo sẵn folder+sheet và cấp quyền ===== */
+function setup() {
+  var f = getFolder();
+  var sh = getSheet();
+  Logger.log('Folder: ' + f.getUrl());
+  Logger.log('Sheet : ' + sh.getParent().getUrl());
+  tgText('🔧 EQ GYM backend đã sẵn sàng. Folder & Sheet đã tạo.');
 }
 
 /* ===== Helpers ===== */
