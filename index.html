@@ -52,6 +52,16 @@ const BANK={ bank_code:"", account_no:"", account_name:"" };
 const COMMUNITY_URL="";
 const PREMIUM_PRICE=999000;
 
+/* ================================================================
+   🎬 ĐỒNG BỘ VIDEO TỪ GOOGLE DRIVE (tuỳ chọn) — xem docs/SETUP-DRIVE-VIDEO.md
+   Dán API key Google (Drive API, khoá theo domain) + ID các thư mục chứa video.
+   Video đặt tên có SỐ BUỔI (vd "0.mp4","17.mp4","buoi 3.mp4"); folder để "Anyone with link".
+   App tự đọc folder, khớp tên → số buổi, phát bằng player Drive. Thả video mới là tự cập nhật.
+   ================================================================ */
+const GDRIVE_API_KEY="";
+const GDRIVE_FOLDERS=[]; // vd: ["1PAShczXIvE24i3w6PBCTwpCK0SiuY7_p","<folder_khac>"]
+let GD_VIDEOS={}; try{ GD_VIDEOS=JSON.parse(localStorage.getItem('eqgym_gdvideos'))||{}; }catch(e){}
+
 const VIDEO_MAP = {
   0:{yt:"",mp4:"videos/bai0.mp4"}, // Bài 0: CHÀO MỪNG ĐẾN VỚI EQ GYM
   1:{yt:"",mp4:""}, // Bài 1: TẠI SAO NGƯỜI THÀNH CÔNG CẦN EQ
@@ -223,6 +233,37 @@ function goStep(d){ sfx('pop'); UI.step=Math.max(0,Math.min(STEPS.length-1,UI.st
 function stepIdx(kind){ return STEPS.findIndex(s=>s.kind===kind); }
 function jumpStep(idx){ if(idx<0||idx>=STEPS.length) return; sfx('tap'); UI.step=idx; render(); window.scrollTo(0,0); }
 function scrollToVid(){ sfx('tap'); const e=document.getElementById('introvid'); if(e) e.scrollIntoView({behavior:'smooth',block:'center'}); }
+
+/* ===== ĐỒNG BỘ VIDEO GOOGLE DRIVE ===== */
+function gdLessonNum(name){
+  const base=(name||'').replace(/\.[a-z0-9]+$/i,'');
+  let m=base.match(/(?:bu[oổ]i|b[aà]i)\s*[-_. ]?\s*(\d{1,2})/i); if(m) return +m[1];
+  if(/^\s*\d{1,2}\s*$/.test(base)) return +base.trim();
+  m=base.match(/\b(\d{1,2})\b/); if(m){ const v=+m[1]; if(v>=0&&v<=29) return v; }
+  return null;
+}
+async function syncDriveVideos(){
+  if(!GDRIVE_API_KEY || !GDRIVE_FOLDERS.length) return;
+  try{
+    const map={};
+    for(const fid of GDRIVE_FOLDERS){
+      const q="'"+fid+"' in parents and mimeType contains 'video/' and trashed=false";
+      const url="https://www.googleapis.com/drive/v3/files?q="+encodeURIComponent(q)+"&key="+encodeURIComponent(GDRIVE_API_KEY)+"&fields=files(id,name)&pageSize=1000";
+      const r=await fetch(url); if(!r.ok){ console.warn('drive folder '+fid+' HTTP '+r.status); continue; }
+      const j=await r.json();
+      (j.files||[]).forEach(f=>{ const n=gdLessonNum(f.name); if(n!=null && map[n]==null) map[n]=f.id; });
+    }
+    if(Object.keys(map).length){ GD_VIDEOS=map; try{ localStorage.setItem('eqgym_gdvideos',JSON.stringify(map)); }catch(e){} if(UI.view==='lesson') render(); }
+  }catch(e){ console.warn('syncDriveVideos',e); }
+}
+function hasVideo(n){ const v=VIDEO_MAP[n]||{}; return !!(v.yt||v.gd||v.mp4||GD_VIDEOS[n]); }
+function videoFor(n){
+  const v=VIDEO_MAP[n]||{}; const id=ytId(v.yt||'');
+  if(id) return {type:'yt',id};
+  const gd=v.gd||GD_VIDEOS[n]; if(gd) return {type:'gd',id:gd};
+  if(v.mp4 && UI.mp4Ok!==false) return {type:'mp4',src:v.mp4};
+  return {type:'none'};
+}
 function nav(v){ sfx('tap'); UI.view=v; if(v==='quiz') render(); else render(); if(v!=='chat') window.scrollTo(0,0); else scrollChatDown(); }
 
 function complete(n){
@@ -609,7 +650,7 @@ function viewHome(){
       <div style="flex:1;min-width:0"><b style="display:block;font-family:'Space Grotesk';font-size:13.5px;line-height:1.3">${M.name}</b><span style="font-size:10.5px;color:#5C6B7A;font-weight:600">${M.sub}</span><div style="margin-top:7px;height:5px;border-radius:4px;background:#EEF2F6;overflow:hidden"><div style="height:100%;width:${Math.round(dc/items.length*100)}%;background:${M.color};border-radius:4px"></div></div></div>
       <div style="text-align:right;flex:0 0 auto"><div style="font-family:'Space Grotesk';font-size:12.5px;color:#0A6E5D;font-weight:700;white-space:nowrap">${dc}/${items.length}</div>${m===curZone?'<div style="font-size:8.5px;font-weight:800;color:#fff;background:#0FB89B;border-radius:6px;padding:2.5px 7px;margin-top:4px;white-space:nowrap;letter-spacing:.5px">ĐANG TẬP Ở ĐÂY</div>':''}<div style="font-size:11px;color:#5C6B7A;margin-top:3px">${open?'▲':'▼'}</div></div></div>`;
     if(open){ h+=`<div style="display:flex;flex-direction:column;gap:8px;margin-top:9px;position:relative;padding-left:10px;animation:fade .22s ease"><div style="position:absolute;left:32px;top:8px;bottom:8px;border-left:2px dashed #D7DEE6"></div>`;
-      items.forEach(l=>{ const done=isDone(l.n), lock=!unlocked(l.n), now=l.n===nextN; const v=VIDEO_MAP[l.n]&&(VIDEO_MAP[l.n].yt||VIDEO_MAP[l.n].mp4); const scr=S.scores[l.n];
+      items.forEach(l=>{ const done=isDone(l.n), lock=!unlocked(l.n), now=l.n===nextN; const v=hasVideo(l.n); const scr=S.scores[l.n];
         h+=`<div onclick="openLesson(${l.n})" style="display:flex;gap:12px;align-items:center;background:#fff;border-radius:15px;padding:9px 12px;min-height:56px;cursor:pointer;position:relative;z-index:2;border:1px solid ${now?'#E85B5B55':'#E3E8EE'};opacity:${lock?.55:1};animation:${now?'pulse 1.8s infinite':'none'}">
           <div style="width:44px;height:44px;flex:0 0 44px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${done?'#0FB89B':'#fff'};border:3px solid ${now?'#E85B5B':(done?'#0FB89B':(lock?'#E3E8EE':M.color))};position:relative"><span style="font-family:'Space Grotesk';font-size:14px;font-weight:700;color:${done?'#fff':(lock?'#B4BFC9':'#0F1923')}">${done?'✓':String(l.n)}</span>${now?'<span style="position:absolute;width:10px;height:10px;border-radius:50%;background:#E85B5B;bottom:-2px;right:-2px;border:2px solid #fff"></span>':''}</div>
           <div style="flex:1;min-width:0"><b style="font-size:12.5px;display:block;line-height:1.35;color:#0F1923">${esc(l.title)}</b><span style="font-size:10.5px;color:#5C6B7A;display:flex;align-items:center;gap:7px;margin-top:3px;flex-wrap:wrap;font-weight:600">${v?'<span style="font-size:9px;padding:2px 7px;border-radius:6px;background:#FDEEEE;color:#C74848;border:1px solid #F5CFCF;white-space:nowrap;font-weight:800">▶ VIDEO</span>':''}${COMICS[l.n]?'<span style="font-size:9px;padding:2px 7px;border-radius:6px;background:#FFF7EC;color:#B27607;border:1px solid #F2D9A8;white-space:nowrap;font-weight:800">◫ TRUYỆN</span>':''}<span style="font-size:9px;padding:2px 7px;border-radius:6px;background:#EAF3FE;color:#2F6FBF;border:1px solid #CCE1F8;white-space:nowrap;font-weight:800">✍ THỰC HÀNH</span>${scr?'<span style="font-size:9px;padding:2px 7px;border-radius:6px;background:#FFF7EC;color:#B27607;border:1px solid #F2D9A8;white-space:nowrap;font-weight:800">★ '+scr.score+'</span>':''}<span style="white-space:nowrap">${esc(l.duration||'5–7 phút')}</span></span></div>
@@ -664,8 +705,10 @@ function lessonIntro(n,l,M){
       ${COMICS[n]?`<button onclick="jumpStep(stepIdx('comic'))" style="flex:1;background:#FDEEEE;border:1px solid #F5CFCF;border-radius:12px;padding:12px 6px;cursor:pointer;color:#C74848;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-weight:800"><span style="font-size:19px">◫</span><span style="font-size:11px">Truyện tranh</span></button>`:''}
       <button onclick="jumpStep(stepIdx('content'))" style="flex:1;background:#EAF3FE;border:1px solid #CCE1F8;border-radius:12px;padding:12px 6px;cursor:pointer;color:#2F6FBF;min-height:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-weight:800"><span style="font-size:19px">≡</span><span style="font-size:11px">Bài đọc</span></button>
     </div></div>`;
-  if(id) h+=`<div id="introvid" style="margin:16px 0 0;border-radius:16px;overflow:hidden;border:1px solid #E3E8EE;background:#000"><iframe src="https://www.youtube-nocookie.com/embed/${id}" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy" style="width:100%;aspect-ratio:16/9;display:block;border:0;background:#000"></iframe></div>`;
-  else if(v.mp4 && UI.mp4Ok!==false) h+=`<div id="introvid" style="margin:16px 0 0;border-radius:16px;overflow:hidden;border:1px solid #E3E8EE;background:#000"><video controls preload="metadata" playsinline src="${esc(v.mp4)}" style="width:100%;aspect-ratio:16/9;display:block;background:#000"></video></div>`;
+  const vv=videoFor(n);
+  if(vv.type==='yt') h+=`<div id="introvid" style="margin:16px 0 0;border-radius:16px;overflow:hidden;border:1px solid #E3E8EE;background:#000"><iframe src="https://www.youtube-nocookie.com/embed/${vv.id}" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy" style="width:100%;aspect-ratio:16/9;display:block;border:0;background:#000"></iframe></div>`;
+  else if(vv.type==='gd') h+=`<div id="introvid" style="margin:16px 0 0;border-radius:16px;overflow:hidden;border:1px solid #E3E8EE;background:#000"><iframe src="https://drive.google.com/file/d/${vv.id}/preview" allow="autoplay;fullscreen" allowfullscreen loading="lazy" style="width:100%;aspect-ratio:16/9;display:block;border:0;background:#000"></iframe></div>`;
+  else if(vv.type==='mp4') h+=`<div id="introvid" style="margin:16px 0 0;border-radius:16px;overflow:hidden;border:1px solid #E3E8EE;background:#000"><video controls preload="metadata" playsinline src="${esc(vv.src)}" style="width:100%;aspect-ratio:16/9;display:block;background:#000"></video></div>`;
   else h+=`<div id="introvid" style="margin:16px 0 0;border-radius:16px;border:1px solid #E3E8EE;aspect-ratio:16/9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;background:linear-gradient(150deg,#0F1923,#123A34);color:#7FA39B"><svg width="40" height="40" viewBox="0 0 100 100"><circle cx="50" cy="50" r="34" fill="none" stroke="#0FB89B" stroke-width="10"/><path d="M42 35 L64 50 L42 65 Z" fill="#fff"/></svg><b style="color:#fff;font-size:13.5px">Video bài học đang cập nhật</b><span style="font-size:11.5px">Đọc nội dung theo từng bước bên dưới nhé!</span></div>`;
   if(l.objectives&&l.objectives.length){ h+=`<div style="background:#fff;border:1px solid #E3E8EE;border-radius:16px;padding:14px 16px;margin:16px 0 0"><div style="font-family:'Space Grotesk';font-size:11px;font-weight:700;color:#0A6E5D;margin-bottom:8px;letter-spacing:2px">MỤC TIÊU BUỔI TẬP</div>`;
     l.objectives.forEach(o=>h+=`<div style="display:flex;gap:10px;padding:4px 0;font-size:13.5px;align-items:flex-start;line-height:1.55;color:#22303D"><span style="width:8px;height:8px;border-radius:50%;background:#0FB89B;margin-top:6px;flex:0 0 8px"></span><span>${esc(o)}</span></div>`);
@@ -817,6 +860,7 @@ async function boot(){
   if(BACKEND){ try{ await initAuth(); }catch(e){ console.warn(e); } }
   if(!S.quiz && (!S.done||!S.done.length)){ UI.view='quiz'; }
   render();
+  syncDriveVideos();
 }
 boot();
 </script>
