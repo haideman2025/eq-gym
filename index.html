@@ -827,15 +827,38 @@ function lessonIntro(n,l,M){
   if(l.objectives&&l.objectives.length){ h+=`<div style="background:#fff;border:1px solid #E3E8EE;border-radius:16px;padding:14px 16px;margin:16px 0 0"><div style="font-family:'Space Grotesk';font-size:11px;font-weight:700;color:#0A6E5D;margin-bottom:8px;letter-spacing:2px">MỤC TIÊU BUỔI TẬP</div>`;
     l.objectives.forEach(o=>h+=`<div style="display:flex;gap:10px;padding:4px 0;font-size:13.5px;align-items:flex-start;line-height:1.55;color:#22303D"><span style="width:8px;height:8px;border-radius:50%;background:#0FB89B;margin-top:6px;flex:0 0 8px"></span><span>${esc(o)}</span></div>`);
     h+=`</div>`; }
+  h+=practiceCTA('Xem xong? Giờ tới lượt bạn luyện tập');
   return h;
 }
 function gotoPractice(){ const i=stepIdx('practice'); jumpStep(i>=0?i:STEPS.length-1); }
+function practiceCTA(label){
+  if(!STEPS||stepIdx('practice')<0) return '';
+  return `<div style="margin-top:18px;background:linear-gradient(150deg,#0F1923,#0A8C77 130%);border-radius:16px;padding:16px;text-align:center;color:#fff;box-shadow:0 10px 26px rgba(15,25,35,.18)">
+    <div style="font-family:'Space Grotesk';font-size:10.5px;font-weight:700;letter-spacing:2px;color:#7FA39B">PHẦN QUAN TRỌNG NHẤT</div>
+    <b style="font-size:15.5px;display:block;margin-top:3px">${esc(label||'Xong rồi! Giờ tới lượt bạn luyện tập')}</b>
+    <p style="font-size:12.5px;color:#BFEFE4;margin:5px 0 12px;font-weight:600;line-height:1.55">Thực hành để biến hiểu biết thành phản xạ — kết quả tự lưu để bạn thấy mình tiến bộ mỗi lần.</p>
+    <button onclick="gotoPractice()" style="width:100%;border:none;border-radius:13px;padding:15px;font-size:14.5px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#E85B5B,#C74848);color:#fff;min-height:50px">⚡ Vào Phòng Tập ngay ›</button>
+  </div>`;
+}
+function progressPanel(n){
+  const hist=(S.history[n]||[]).slice().reverse(); // cũ -> mới
+  if(hist.length<2) return '';
+  const scores=hist.map(x=>x.score);
+  const first=scores[0], last=scores[scores.length-1], best=Math.max.apply(null,scores), delta=last-first;
+  const bars=scores.slice(-12).map(s=>{ const hh=Math.max(6,Math.round(s/100*44)); const c=s>=80?'#0FB89B':s>=55?'#4A9EFF':'#E0930A';
+    return `<div style="flex:1;min-width:5px;height:44px;display:flex;align-items:flex-end"><div style="width:100%;height:${hh}px;border-radius:3px;background:${c}"></div></div>`; }).join('');
+  return `<div style="margin-top:16px;background:#fff;border:1px solid #E3E8EE;border-radius:15px;padding:14px 15px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="font-family:'Space Grotesk';font-size:10.5px;font-weight:700;letter-spacing:1.5px;color:#0A6E5D">TIẾN BỘ CỦA BẠN · ${scores.length} LẦN</div><div style="font-size:12px;font-weight:800;color:${delta>=0?'#0A8C77':'#C74848'};white-space:nowrap">${delta>=0?'▲ +'+delta:'▼ '+delta} so lần đầu</div></div>
+    <div style="display:flex;gap:3px;align-items:flex-end;margin:12px 0 9px;height:44px">${bars}</div>
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;color:#5C6B7A;font-weight:700"><span>Lần đầu <b style="color:#22303D">${first}</b></span><span>Gần nhất <b style="color:#22303D">${last}</b></span><span>Cao nhất <b style="color:#0A6E5D">${best}</b></span></div>
+  </div>`;
+}
 function lessonComic(n,step){
   const N=step.pages||COMICS[n]||0;
   let h=`<div style="display:inline-flex;align-items:center;gap:8px;font-family:'Space Grotesk';font-size:11.5px;font-weight:700;letter-spacing:1px;padding:7px 14px;border-radius:999px;background:#FDEEEE;border:1px solid #F5CFCF;color:#C74848;margin-bottom:12px">◫ TRUYỆN TRANH · ${N} TRANG</div>`;
   for(let i=1;i<=N;i++){ const pg=String(i).padStart(2,'0');
     h+=`<div style="position:relative;margin-bottom:10px;border-radius:14px;overflow:hidden;border:1px solid #E3E8EE;background:#fff;min-height:120px"><img src="comics/l${n}/p${pg}.jpg" loading="lazy" alt="Trang ${i}" style="width:100%;display:block"><span style="position:absolute;bottom:8px;right:8px;background:rgba(15,25,35,.72);color:#fff;font-size:10px;font-weight:800;padding:2px 8px;border-radius:8px;font-family:'Space Grotesk'">${i}/${N}</span></div>`; }
-  h+=`<div style="background:#EAFBF6;border:1px solid #B6EDDF;border-radius:16px;padding:16px;text-align:center;margin-top:6px"><b style="font-family:'Space Grotesk';font-size:15px;color:#0A6E5D;display:block">Đọc xong truyện rồi!</b><p style="color:#5C6B7A;font-size:13px;margin:6px 0 12px;font-weight:600">Giờ tới lượt bạn luyện tập để biến hiểu biết thành phản xạ.</p><button onclick="gotoPractice()" style="width:100%;border:none;border-radius:14px;padding:14px;font-size:14.5px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#E85B5B,#C74848);color:#fff;min-height:50px">Vào Phòng Tập Tình Huống ›</button></div>`;
+  h+=practiceCTA('Đọc xong truyện rồi! Vào phòng tập');
   return h;
 }
 function lessonContent(step,M){
@@ -844,10 +867,12 @@ function lessonContent(step,M){
   step.items.forEach(it=>{ if(it.isHead) h+=`<p style="font-family:'Space Grotesk';font-weight:700;color:#0F1923;margin:20px 0 4px;font-size:16.5px;line-height:1.45">${esc(it.t)}</p>`;
     else if(it.isFlow) h+=`<p style="background:#fff;border:1px solid #E3E8EE;border-left:3px solid #0FB89B;border-radius:12px;padding:11px 14px;font-size:14px;color:#22303D;font-weight:700;margin:10px 0;line-height:1.6">${esc(it.t)}</p>`;
     else h+=`<p style="margin:9px 0;font-size:15.5px;color:#22303D;line-height:1.8">${esc(it.t)}</p>`; });
+  h+=practiceCTA('Đọc xong rồi! Vào phòng tập thực hành');
   return h;
 }
 function lessonPractice(n,step){
   const ref=step.reflect, sco=S.scen[n], res=S.scores[n];
+  const prevSco=(S.history[n]&&S.history[n].length>1)?S.history[n][1].score:null;
   let h=`<div style="background:#fff;border:1px solid #B6EDDF;border-radius:18px;padding:17px 16px;box-shadow:0 8px 24px rgba(15,184,155,.08)">
     <div style="display:flex;align-items:center;gap:9px;font-family:'Space Grotesk';font-weight:700;font-size:14px;color:#0A6E5D;flex-wrap:wrap;letter-spacing:.5px">${ref?'BÀI PHẢN CHIẾU':'PHÒNG TẬP TÌNH HUỐNG'} <span style="background:#EAFBF6;border:1px solid #B6EDDF;border-radius:999px;padding:4px 10px;font-size:10.5px;color:#0A6E5D;white-space:nowrap;font-family:'Nunito';font-weight:800">+${fmt(B_PRACTICE)} EP</span></div>
     <div style="margin-top:8px">${step.items.map(it=>`<p style="font-size:14px;margin:7px 0;color:#22303D;line-height:1.7">${esc(it.t)}</p>`).join('')}</div>`;
@@ -862,10 +887,11 @@ function lessonPractice(n,step){
     <button onclick="grade(${n})" ${UI.grading?'disabled':''} style="width:100%;margin-top:10px;border:none;border-radius:14px;padding:15px;font-size:14.5px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#E85B5B,#C74848);color:#fff;box-shadow:0 8px 22px rgba(232,91,91,.28);min-height:50px;opacity:${UI.grading?.55:1}">${UI.grading?'Coach đang chấm...':(S.graded[n]?'Nộp bài luyện tập lần nữa':'Nộp bài cho Coach AI chấm điểm')}</button>`;
   if(res) h+=`<div style="margin-top:13px;background:#EAFBF6;border-radius:15px;padding:14px 15px;color:#0F1923;border:1px solid #B6EDDF;animation:fade .3s">
     <div style="display:flex;align-items:center;gap:12px"><div style="width:58px;height:58px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:0 0 58px;border:4px solid #0FB89B"><b style="font-family:'Space Grotesk';font-size:19px;line-height:1;color:#0F1923">${res.score}</b><span style="font-size:8.5px;color:#5C6B7A;font-weight:700">/100</span></div>
-    <div><h4 style="margin:0;font-size:13.5px;color:#0A6E5D;font-weight:800">${res.by==='ai'?'Coach AI chấm':'Chấm offline (chưa có API key)'}</h4><div style="font-size:11px;color:#B27607;margin-top:2px;font-weight:800">${res.score>=80?'★★★ Xuất sắc':res.score>=55?'★★ Tốt':'★ Cần luyện thêm'} · Khung 4 trụ EQ</div></div></div>
+    <div><h4 style="margin:0;font-size:13.5px;color:#0A6E5D;font-weight:800">${res.by==='ai'?'Coach AI chấm':'Chấm offline (chưa có API key)'}</h4><div style="font-size:11px;color:#B27607;margin-top:2px;font-weight:800">${res.score>=80?'★★★ Xuất sắc':res.score>=55?'★★ Tốt':'★ Cần luyện thêm'} · Khung 4 trụ EQ</div>${prevSco!=null?`<div style="font-size:11.5px;font-weight:800;margin-top:3px;color:${res.score-prevSco>=0?'#0A8C77':'#C74848'}">${res.score-prevSco>=0?'▲ +'+(res.score-prevSco):'▼ '+(res.score-prevSco)} so với lần trước</div>`:''}</div></div>
     ${pillarBarsHtml(res.dims)}
     <div style="font-size:13.5px;margin-top:6px;line-height:1.65;color:#22303D">${esc(res.feedback)}</div>${res.tip?`<div style="font-size:12.5px;margin-top:9px;background:#fff;border-radius:11px;padding:9px 12px;border:1px dashed #0FB89B;line-height:1.55;color:#22303D"><b style="color:#0A6E5D">Gợi ý:</b> ${esc(res.tip)}</div>`:''}</div>`;
   h+=`<div style="font-size:11.5px;color:#5C6B7A;margin-top:9px;line-height:1.55">${aiReady()?'Coach AI sẵn sàng chấm bài.':'Chưa bật AI — bài được chấm offline. Vào mục Tài khoản để thêm key (miễn phí).'}</div>`;
+  h+=progressPanel(n);
   const hist=S.history[n]||[];
   if(hist.length){ h+=`<div style="margin-top:16px"><div style="font-family:'Space Grotesk';font-size:10.5px;font-weight:700;letter-spacing:1.5px;color:#2F6FBF">LỊCH SỬ LUYỆN TẬP (${hist.length})</div>`;
     hist.slice(0,10).forEach(x=>{ h+=`<div style="margin-top:9px;background:#F5F8FA;border:1px solid #E3E8EE;border-radius:13px;padding:11px 13px"><div style="display:flex;gap:10px;font-size:11px;color:#5C6B7A;flex-wrap:wrap;font-weight:700"><span style="color:#B27607;font-weight:800;white-space:nowrap">★ ${x.score}/100</span><span style="white-space:nowrap">${x.by==='ai'?'AI':'offline'}</span><span style="white-space:nowrap">${fmtDate(x.ts)}</span></div>${x.scenario?`<div style="font-size:12px;color:#2F6FBF;margin-top:7px;line-height:1.55">◆ ${esc(clip(x.scenario,160))}</div>`:''}<div style="font-size:12.5px;color:#22303D;margin-top:7px;line-height:1.6;white-space:pre-wrap">${esc(clip(x.answer,400))}</div>${x.feedback?`<div style="font-size:12px;color:#5C6B7A;margin-top:7px;line-height:1.55">Coach: ${esc(clip(x.feedback,300))}</div>`:''}</div>`; });
