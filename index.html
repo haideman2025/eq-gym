@@ -110,7 +110,8 @@ async function doLogin(){
     MEMBER={code,name:d.name,points:d.points||0,role:d.role,session:d.session||''};
     try{ localStorage.setItem('eqgym_code',code); localStorage.setItem('eqgym_session',MEMBER.session); }catch(e){}
     if(d.role==='member'){ if(d.progress){ applyProgress(d.progress); } else { S.bounty=d.points||0; save(); } startHeartbeat(); }
-    UI.loginBusy=false; UI.loginErr=''; UI.view='home'; sfx('success'); render();
+    UI.loginBusy=false; UI.loginErr=''; UI.adminLogin=false; sfx('success');
+    if(d.role==='admin'){ openAdminCode(); } else { UI.view='home'; render(); }
   }catch(e){ UI.loginBusy=false; UI.loginErr='Lỗi kết nối, thử lại'; render(); }
 }
 function logoutMember(){ MEMBER=null; try{ localStorage.removeItem('eqgym_code'); localStorage.removeItem('eqgym_session'); }catch(e){} stopHeartbeat(); stopRankRefresh(); UI.settingsOpen=false; UI.adminLogin=false; UI.view='home'; render(); }
