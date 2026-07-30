@@ -59,6 +59,10 @@ let AUTH=null;
    ================================================================ */
 const APP_BACKEND="https://script.google.com/macros/s/AKfycbx74hAIeDLXPaWU5kCpfZAKdKn3OnRo3M_IB_Yhg9HpdQL0KZdJjV78DTpPUwWq7BMRPQ/exec";
 const CODE_MODE=!!APP_BACKEND;
+/* 🌐 CHẾ ĐỘ MỞ THỬ (public): true = ai cũng vào được, KHÔNG cần mã đăng nhập.
+   Dùng chung 1 mã khách (GUEST_CODE) để Coach AI vẫn chạy. Đổi false để bật lại đăng nhập bằng mã. */
+const OPEN_MODE=true;
+const GUEST_CODE="EQ4VEEB";
 let MEMBER=null; // {code,name,points,role}
 function memberCode(){ try{ return localStorage.getItem('eqgym_code')||''; }catch(e){ return ''; } }
 async function api(payload){ const r=await fetch(APP_BACKEND,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)}); return await r.json(); }
@@ -83,10 +87,10 @@ function trimForSync(){
   try{ if(JSON.stringify(out).length>45000){ out.ans={}; } if(JSON.stringify(out).length>45000){ out.history={}; } }catch(e){}
   return out;
 }
-function syncAll(){ if(!CODE_MODE||!MEMBER||MEMBER.role!=='member') return; clearTimeout(_saT); _saT=setTimeout(async()=>{ try{ const d=await api({action:'saveProgress',code:MEMBER.code,session:MEMBER.session,data:trimForSync()}); handleKick(d); }catch(e){} },2500); }
+function syncAll(){ if(OPEN_MODE||!CODE_MODE||!MEMBER||MEMBER.role!=='member') return; clearTimeout(_saT); _saT=setTimeout(async()=>{ try{ const d=await api({action:'saveProgress',code:MEMBER.code,session:MEMBER.session,data:trimForSync()}); handleKick(d); }catch(e){} },2500); }
 function syncPoints(){ syncAll(); }
 let _hb=null;
-function startHeartbeat(){ stopHeartbeat(); if(!CODE_MODE||!MEMBER||MEMBER.role!=='member') return; _hb=setInterval(async()=>{ try{ const d=await api({action:'ping',code:MEMBER.code,session:MEMBER.session}); handleKick(d); }catch(e){} },20000); }
+function startHeartbeat(){ stopHeartbeat(); if(OPEN_MODE||!CODE_MODE||!MEMBER||MEMBER.role!=='member') return; _hb=setInterval(async()=>{ try{ const d=await api({action:'ping',code:MEMBER.code,session:MEMBER.session}); handleKick(d); }catch(e){} },20000); }
 function stopHeartbeat(){ if(_hb){ clearInterval(_hb); _hb=null; } }
 let _rankT=null;
 function startRankRefresh(){ stopRankRefresh(); _rankT=setInterval(()=>{ if(UI.view==='rank') loadRank(); else stopRankRefresh(); },15000); }
@@ -726,7 +730,7 @@ async function rejectPay(id){ try{ await sb.from('payments').update({status:'rej
 /* ===== RENDER ===== */
 function render(){
   const app=document.getElementById('app'); if(!app) return;
-  if(CODE_MODE && !MEMBER){ app.innerHTML=viewLogin(); return; }
+  if(CODE_MODE && !OPEN_MODE && !MEMBER){ app.innerHTML=viewLogin(); return; }
   let main='';
   if(UI.view==='home') main=viewHome();
   else if(UI.view==='lesson') main=viewLesson();
@@ -969,7 +973,7 @@ function fixedUI(){
   let h='';
   if(UI.view!=='lesson'){
     const items=[['home','⚑','Lộ trình'],['quiz','◈','Test EQ'],['chat','✦','Coach'],['journal','✎','Nhật ký']];
-    if(CODE_MODE) items.push(['rank','🏆','Thi đua']);
+    if(CODE_MODE && !OPEN_MODE) items.push(['rank','🏆','Thi đua']);
     items.push(['settings','⚙','Tài khoản']);
     h+=`<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(255,255,255,.97);backdrop-filter:blur(14px);border-top:1px solid #E3E8EE;display:flex;padding:6px 0 calc(env(safe-area-inset-bottom) + 8px);z-index:40">`;
     items.forEach(it=>{ const active=UI.view===it[0]; const on=it[0]==='settings'?'openSettings()':(it[0]==='rank'?'openRank()':`nav('${it[0]}')`);
@@ -993,6 +997,15 @@ function fixedUI(){
 }
 function sheet(inner){ return `<div onclick="if(event.target===this){UI.settingsOpen=false;UI.musicOpen=false;render()}" style="position:fixed;inset:0;background:rgba(15,25,35,.45);backdrop-filter:blur(6px);z-index:70;display:flex;align-items:flex-end;justify-content:center"><div style="background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:22px 20px calc(env(safe-area-inset-bottom) + 24px);animation:up .28s ease">${inner}</div></div>`; }
 function sheetSettings(){
+  if(OPEN_MODE){
+    return sheet(`<h3 style="margin:2px 0 10px;font-family:'Space Grotesk';font-size:17px;font-weight:700">Bản dùng thử công khai 🌐</h3>
+      <div style="background:linear-gradient(150deg,#0F1923,#0A8C77 130%);border-radius:16px;padding:15px 16px;color:#fff">
+        <div style="font-size:11px;color:#7FA39B;font-weight:800;letter-spacing:1px">EQ GYM · DEMO</div>
+        <div style="font-size:15px;font-weight:800;margin-top:4px;line-height:1.5">Bạn đang trải nghiệm thử — không cần đăng nhập.</div>
+      </div>
+      <p style="color:#5C6B7A;font-size:12.5px;line-height:1.7;margin:12px 2px 0;font-weight:600">✨ Coach AI đã bật sẵn để bạn thử chấm bài. Tiến độ học lưu ngay trên thiết bị này. Khi ra mắt chính thức, mỗi học viên sẽ có mã đăng nhập riêng để đồng bộ đa thiết bị & tham gia Đảo Thi Đua.</p>
+      <p style="color:#8A97A5;font-size:11.5px;margin:14px 2px 0;font-weight:600">Cảm ơn bạn đã dùng thử EQ GYM 💚</p>`);
+  }
   if(CODE_MODE){
     const m=MEMBER||{};
     let h=`<h3 style="margin:2px 0 10px;font-family:'Space Grotesk';font-size:17px;font-weight:700">Tài khoản</h3>
@@ -1040,7 +1053,8 @@ function clearChat(){ if(confirm('Xóa toàn bộ hội thoại với Coach AI?'
 document.addEventListener('pointerdown',function once(){ syncBgm(); }, {once:false});
 async function boot(){
   if(BACKEND){ try{ await initAuth(); }catch(e){ console.warn(e); } }
-  if(CODE_MODE){ const c=memberCode(); if(c){ try{ const d=await api({action:'login',code:c}); if(d&&d.ok){ MEMBER={code:c,name:d.name,points:d.points||0,role:d.role,session:d.session||''}; try{localStorage.setItem('eqgym_session',MEMBER.session||'');}catch(e){} if(d.role==='member'){ if(d.progress) applyProgress(d.progress); else S.bounty=d.points||0; startHeartbeat(); } } else { try{ localStorage.removeItem('eqgym_code'); localStorage.removeItem('eqgym_session'); }catch(e){} } }catch(e){} } }
+  if(CODE_MODE && OPEN_MODE){ MEMBER={code:GUEST_CODE,name:'Khách',role:'member',session:''}; }
+  else if(CODE_MODE){ const c=memberCode(); if(c){ try{ const d=await api({action:'login',code:c}); if(d&&d.ok){ MEMBER={code:c,name:d.name,points:d.points||0,role:d.role,session:d.session||''}; try{localStorage.setItem('eqgym_session',MEMBER.session||'');}catch(e){} if(d.role==='member'){ if(d.progress) applyProgress(d.progress); else S.bounty=d.points||0; startHeartbeat(); } } else { try{ localStorage.removeItem('eqgym_code'); localStorage.removeItem('eqgym_session'); }catch(e){} } }catch(e){} } }
   if(!CODE_MODE && !S.quiz && (!S.done||!S.done.length)){ UI.view='quiz'; }
   render();
   syncDriveVideos();
