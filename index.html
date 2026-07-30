@@ -75,7 +75,7 @@ async function geminiFetch(body){
 }
 let _psT=null;
 function memberSession(){ try{ return localStorage.getItem('eqgym_session')||''; }catch(e){ return ''; } }
-function handleKick(d){ if(d&&d.ok===false&&(d.error==='session'||d.error==='blocked')){ kickedLogout(d.error); return true; } return false; }
+function handleKick(d){ if(OPEN_MODE) return false; if(d&&d.ok===false&&(d.error==='session'||d.error==='blocked')){ kickedLogout(d.error); return true; } return false; }
 function kickedLogout(reason){ MEMBER=null; try{ localStorage.removeItem('eqgym_code'); localStorage.removeItem('eqgym_session'); }catch(e){} stopHeartbeat(); stopRankRefresh(); UI.settingsOpen=false; UI.view='home'; UI.loginErr=(reason==='blocked')?'Tài khoản của bạn đã bị tạm khoá. Liên hệ admin để mở lại.':'Bạn vừa đăng nhập ở thiết bị khác. Mỗi tài khoản chỉ dùng 1 thiết bị cùng lúc — để bạn tập trung & chánh niệm khi học.'; render(); }
 let _saT=null;
 function trimForSync(){
@@ -87,7 +87,7 @@ function trimForSync(){
   try{ if(JSON.stringify(out).length>45000){ out.ans={}; } if(JSON.stringify(out).length>45000){ out.history={}; } }catch(e){}
   return out;
 }
-function syncAll(){ if(OPEN_MODE||!CODE_MODE||!MEMBER||MEMBER.role!=='member') return; clearTimeout(_saT); _saT=setTimeout(async()=>{ try{ const d=await api({action:'saveProgress',code:MEMBER.code,session:MEMBER.session,data:trimForSync()}); handleKick(d); }catch(e){} },2500); }
+function syncAll(){ if(!CODE_MODE||!MEMBER||(MEMBER.role!=='member'&&MEMBER.role!=='guest')) return; clearTimeout(_saT); _saT=setTimeout(async()=>{ try{ const d=await api({action:'saveProgress',code:MEMBER.code,session:MEMBER.session,data:trimForSync()}); handleKick(d); }catch(e){} },2500); }
 function syncPoints(){ syncAll(); }
 let _hb=null;
 function startHeartbeat(){ stopHeartbeat(); if(OPEN_MODE||!CODE_MODE||!MEMBER||MEMBER.role!=='member') return; _hb=setInterval(async()=>{ try{ const d=await api({action:'ping',code:MEMBER.code,session:MEMBER.session}); handleKick(d); }catch(e){} },20000); }
@@ -113,7 +113,41 @@ async function doLogin(){
     UI.loginBusy=false; UI.loginErr=''; UI.view='home'; sfx('success'); render();
   }catch(e){ UI.loginBusy=false; UI.loginErr='Lỗi kết nối, thử lại'; render(); }
 }
-function logoutMember(){ MEMBER=null; try{ localStorage.removeItem('eqgym_code'); localStorage.removeItem('eqgym_session'); }catch(e){} stopHeartbeat(); stopRankRefresh(); UI.settingsOpen=false; UI.view='home'; render(); }
+function logoutMember(){ MEMBER=null; try{ localStorage.removeItem('eqgym_code'); localStorage.removeItem('eqgym_session'); }catch(e){} stopHeartbeat(); stopRankRefresh(); UI.settingsOpen=false; UI.adminLogin=false; UI.view='home'; render(); }
+function guestStored(){ try{ return JSON.parse(localStorage.getItem('eqgym_guest')||'null'); }catch(e){ return null; } }
+function guestLogout(){ MEMBER=null; try{ localStorage.removeItem('eqgym_guest'); }catch(e){} stopRankRefresh(); UI.settingsOpen=false; UI.view='home'; render(); }
+async function doGuestJoin(){
+  const name=(val('gname')||'').trim(); const email=(val('gemail')||'').trim().toLowerCase();
+  if(!email||email.indexOf('@')<1){ UI.loginErr='Nhập email hợp lệ để bắt đầu'; render(); return; }
+  UI.loginBusy=true; UI.loginErr=''; render();
+  try{ const d=await api({action:'guest',name,email});
+    if(!d||!d.ok){ UI.loginBusy=false; UI.loginErr=(d&&d.error)||'Lỗi, thử lại'; render(); return; }
+    MEMBER={code:d.code,name:d.name,role:'guest',session:d.session||'',email};
+    try{ localStorage.setItem('eqgym_guest',JSON.stringify({code:d.code,session:d.session,name:d.name,email})); }catch(e){}
+    if(d.progress) applyProgress(d.progress);
+    UI.loginBusy=false; UI.loginErr=''; UI.view='home'; sfx('success'); render();
+  }catch(e){ UI.loginBusy=false; UI.loginErr='Lỗi kết nối, thử lại'; render(); }
+}
+function emailGate(){
+  const g=guestStored()||{};
+  return `<div style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:32px 24px;background:linear-gradient(160deg,#0F1923,#0A6E5D 135%)">
+    <div style="text-align:center;color:#fff">
+      <div style="width:76px;height:76px;margin:0 auto;border-radius:22px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center">${LOGOW}</div>
+      <h1 style="font-family:'Space Grotesk';font-size:26px;font-weight:700;margin:18px 0 2px">EQ <span style="color:#0FB89B">GYM</span></h1>
+      <p style="color:#B9C6D4;font-size:13px;font-weight:600;margin:0">Phòng tập cảm xúc · Bản dùng thử</p>
+    </div>
+    <div style="background:#fff;border-radius:22px;padding:22px 18px;margin-top:26px;box-shadow:0 18px 44px rgba(0,0,0,.3)">
+      <h2 style="font-family:'Space Grotesk';font-size:17px;font-weight:700;margin:0 0 4px">Bắt đầu học thử ngay 🌱</h2>
+      <p style="color:#5C6B7A;font-size:12.5px;font-weight:600;line-height:1.6;margin:0 0 14px">Nhập tên & email để lưu tiến độ và mở khoá Coach AI. Miễn phí, không cần mật khẩu.</p>
+      <input id="gname" type="text" placeholder="Tên của bạn" value="${esc(g.name||'')}" autocomplete="name" style="width:100%;background:#F5F8FA;border:1px solid #E3E8EE;border-radius:13px;padding:14px;font-size:15px;font-weight:600">
+      <input id="gemail" type="email" inputmode="email" placeholder="Email" value="${esc(g.email||'')}" autocomplete="email" onkeydown="if(event.key==='Enter')doGuestJoin()" style="width:100%;margin-top:10px;background:#F5F8FA;border:1px solid #E3E8EE;border-radius:13px;padding:14px;font-size:15px;font-weight:600">
+      ${UI.loginErr?`<p style="color:#E85B5B;font-size:12.5px;font-weight:700;margin:10px 0 0;text-align:center">${esc(UI.loginErr)}</p>`:''}
+      <button onclick="doGuestJoin()" ${UI.loginBusy?'disabled':''} style="width:100%;margin-top:14px;border:none;border-radius:14px;padding:16px;font-size:15px;font-weight:800;cursor:pointer;background:linear-gradient(135deg,#0FB89B,#0A8C77);color:#fff;min-height:52px;opacity:${UI.loginBusy?.6:1}">${UI.loginBusy?'Đang vào...':'Vào phòng tập →'}</button>
+      <p style="color:#8A97A5;font-size:10.5px;font-weight:600;margin:12px 0 0;text-align:center">🔒 Chỉ dùng để lưu tiến độ của bạn trong đợt dùng thử.</p>
+    </div>
+    <p style="text-align:center;margin:16px 0 0"><a onclick="UI.adminLogin=true;UI.loginErr='';render()" style="color:#7FA39B;font-size:11.5px;font-weight:700;cursor:pointer">Quản trị viên? Đăng nhập tại đây →</a></p>
+  </div>`;
+}
 function openRank(){ sfx('tap'); UI.view='rank'; UI.rankData=null; render(); loadRank(); startRankRefresh(); window.scrollTo(0,0); }
 async function loadRank(){ try{ const d=await api({action:'leaderboard',code:MEMBER.code,session:MEMBER.session}); if(handleKick(d)) return; if(d&&d.ok){ UI.rankData=d; render(); } }catch(e){} }
 function openAdminCode(){ sfx('tap'); UI.settingsOpen=false; UI.view='admincode'; UI.newCode=null; UI.members=undefined; UI.adminTab='members'; render(); loadMembers(); window.scrollTo(0,0); }
@@ -166,8 +200,8 @@ function viewAdminCode(){
     (UI.members||[]).forEach(m=>{ const bl=m.status==='blocked';
       list+=`<div style="background:#fff;border:1px solid ${bl?'#F3C9C9':'#E3E8EE'};border-radius:13px;padding:11px 13px;margin-bottom:8px">
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="flex:1;min-width:0"><b style="font-size:13.5px">${esc(m.name)}</b>${bl?' <span style="font-size:10px;color:#E85B5B;font-weight:800">● ĐÃ KHOÁ</span>':''}<div style="font-family:'Space Grotesk';font-size:12px;color:#0A6E5D;font-weight:700">${esc(m.code)}${m.phone?' · '+esc(m.phone):''}</div></div>
-          <div style="font-family:'Space Grotesk';font-weight:700;color:#5C6B7A;font-size:13px">${fmt(m.points)} EP</div>
+          <div style="flex:1;min-width:0"><b style="font-size:13.5px">${esc(m.name)}</b>${m.role==='guest'?' <span style="font-size:9px;color:#4A9EFF;font-weight:800;background:#EAF3FE;border:1px solid #CCE1F8;border-radius:6px;padding:1px 5px">KHÁCH</span>':''}${bl?' <span style="font-size:10px;color:#E85B5B;font-weight:800">● KHOÁ</span>':''}<div style="font-size:11.5px;color:#5C6B7A;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.email||m.phone||'')}</div><div style="font-family:'Space Grotesk';font-size:11px;color:#0A6E5D;font-weight:700">${esc(m.code)} · ${m.done||0} bài${m.last?' · '+esc(String(m.last)):''}</div></div>
+          <div style="font-family:'Space Grotesk';font-weight:700;color:#5C6B7A;font-size:13px;white-space:nowrap">${fmt(m.points)} EP</div>
         </div>
         <div style="display:flex;gap:6px;margin-top:9px">
           <button onclick="copyCode('${esc(m.code)}')" style="flex:1;border:1px solid #E3E8EE;background:#F5F8FA;border-radius:9px;padding:8px;font-size:11px;font-weight:800;cursor:pointer;color:#0A6E5D">Copy mã</button>
@@ -730,7 +764,7 @@ async function rejectPay(id){ try{ await sb.from('payments').update({status:'rej
 /* ===== RENDER ===== */
 function render(){
   const app=document.getElementById('app'); if(!app) return;
-  if(CODE_MODE && !OPEN_MODE && !MEMBER){ app.innerHTML=viewLogin(); return; }
+  if(CODE_MODE && !MEMBER){ app.innerHTML=(OPEN_MODE&&!UI.adminLogin)?emailGate():viewLogin(); return; }
   let main='';
   if(UI.view==='home') main=viewHome();
   else if(UI.view==='lesson') main=viewLesson();
@@ -973,7 +1007,7 @@ function fixedUI(){
   let h='';
   if(UI.view!=='lesson'){
     const items=[['home','⚑','Lộ trình'],['quiz','◈','Test EQ'],['chat','✦','Coach'],['journal','✎','Nhật ký']];
-    if(CODE_MODE && !OPEN_MODE) items.push(['rank','🏆','Thi đua']);
+    if(CODE_MODE) items.push(['rank','🏆','Thi đua']);
     items.push(['settings','⚙','Tài khoản']);
     h+=`<div style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(255,255,255,.97);backdrop-filter:blur(14px);border-top:1px solid #E3E8EE;display:flex;padding:6px 0 calc(env(safe-area-inset-bottom) + 8px);z-index:40">`;
     items.forEach(it=>{ const active=UI.view===it[0]; const on=it[0]==='settings'?'openSettings()':(it[0]==='rank'?'openRank()':`nav('${it[0]}')`);
@@ -997,14 +1031,16 @@ function fixedUI(){
 }
 function sheet(inner){ return `<div onclick="if(event.target===this){UI.settingsOpen=false;UI.musicOpen=false;render()}" style="position:fixed;inset:0;background:rgba(15,25,35,.45);backdrop-filter:blur(6px);z-index:70;display:flex;align-items:flex-end;justify-content:center"><div style="background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:480px;padding:22px 20px calc(env(safe-area-inset-bottom) + 24px);animation:up .28s ease">${inner}</div></div>`; }
 function sheetSettings(){
-  if(OPEN_MODE){
-    return sheet(`<h3 style="margin:2px 0 10px;font-family:'Space Grotesk';font-size:17px;font-weight:700">Bản dùng thử công khai 🌐</h3>
+  if(OPEN_MODE && (!MEMBER||MEMBER.role!=='admin')){
+    const m=MEMBER||{};
+    return sheet(`<h3 style="margin:2px 0 10px;font-family:'Space Grotesk';font-size:17px;font-weight:700">Tài khoản dùng thử 🌱</h3>
       <div style="background:linear-gradient(150deg,#0F1923,#0A8C77 130%);border-radius:16px;padding:15px 16px;color:#fff">
-        <div style="font-size:11px;color:#7FA39B;font-weight:800;letter-spacing:1px">EQ GYM · DEMO</div>
-        <div style="font-size:15px;font-weight:800;margin-top:4px;line-height:1.5">Bạn đang trải nghiệm thử — không cần đăng nhập.</div>
+        <div style="font-size:10.5px;color:#7FA39B;font-weight:800;letter-spacing:1.5px">EQ GYM · DÙNG THỬ</div>
+        <div style="font-size:17px;font-weight:800;margin-top:3px">${esc(m.name||'Khách')}</div>
+        <div style="font-size:12.5px;color:#BFEFE4;font-weight:700;margin-top:2px">${esc(m.email||'')} · <span style="color:#fff">${fmt(S.bounty)} EP</span></div>
       </div>
-      <p style="color:#5C6B7A;font-size:12.5px;line-height:1.7;margin:12px 2px 0;font-weight:600">✨ Coach AI đã bật sẵn để bạn thử chấm bài. Tiến độ học lưu ngay trên thiết bị này. Khi ra mắt chính thức, mỗi học viên sẽ có mã đăng nhập riêng để đồng bộ đa thiết bị & tham gia Đảo Thi Đua.</p>
-      <p style="color:#8A97A5;font-size:11.5px;margin:14px 2px 0;font-weight:600">Cảm ơn bạn đã dùng thử EQ GYM 💚</p>`);
+      <p style="color:#5C6B7A;font-size:12px;line-height:1.65;margin:12px 2px 0;font-weight:600">✨ Coach AI đã bật sẵn. Tiến độ học tự lưu theo email của bạn — vào lại bằng email này là học tiếp được. Đua điểm ở tab 🏆 Thi đua nhé!</p>
+      <button onclick="guestLogout()" style="width:100%;margin-top:14px;border:1px solid #E3E8EE;border-radius:14px;padding:13px;font-size:14px;font-weight:800;cursor:pointer;background:#fff;color:#5C6B7A;min-height:46px">Đổi email / Thoát</button>`);
   }
   if(CODE_MODE){
     const m=MEMBER||{};
@@ -1053,7 +1089,7 @@ function clearChat(){ if(confirm('Xóa toàn bộ hội thoại với Coach AI?'
 document.addEventListener('pointerdown',function once(){ syncBgm(); }, {once:false});
 async function boot(){
   if(BACKEND){ try{ await initAuth(); }catch(e){ console.warn(e); } }
-  if(CODE_MODE && OPEN_MODE){ MEMBER={code:GUEST_CODE,name:'Khách',role:'member',session:''}; }
+  if(CODE_MODE && OPEN_MODE){ const g=guestStored(); if(g&&g.email){ try{ const d=await api({action:'guest',name:g.name,email:g.email}); if(d&&d.ok){ MEMBER={code:d.code,name:d.name,role:'guest',session:d.session||'',email:g.email}; try{ localStorage.setItem('eqgym_guest',JSON.stringify({code:d.code,session:d.session,name:d.name,email:g.email})); }catch(e){} if(d.progress) applyProgress(d.progress); } else { try{ localStorage.removeItem('eqgym_guest'); }catch(e){} } }catch(e){} } }
   else if(CODE_MODE){ const c=memberCode(); if(c){ try{ const d=await api({action:'login',code:c}); if(d&&d.ok){ MEMBER={code:c,name:d.name,points:d.points||0,role:d.role,session:d.session||''}; try{localStorage.setItem('eqgym_session',MEMBER.session||'');}catch(e){} if(d.role==='member'){ if(d.progress) applyProgress(d.progress); else S.bounty=d.points||0; startHeartbeat(); } } else { try{ localStorage.removeItem('eqgym_code'); localStorage.removeItem('eqgym_session'); }catch(e){} } }catch(e){} } }
   if(!CODE_MODE && !S.quiz && (!S.done||!S.done.length)){ UI.view='quiz'; }
   render();

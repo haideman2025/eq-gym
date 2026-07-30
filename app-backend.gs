@@ -24,7 +24,7 @@ var MEMBERS = 'Members';
 var ACTIVITY = 'Activity';
 var FOLDER_NAME = 'EQ GYM - Bang chung CK';
 var SHEET_NAME = 'EQ GYM - He thong';
-var M_HEAD = ['Mã', 'Tên', 'SĐT', 'Điểm', 'Vai trò', 'Trạng thái', 'Tạo lúc', 'HĐ gần nhất', 'Địa chỉ', 'Link CK', 'Phiên', 'Tiến độ'];
+var M_HEAD = ['Mã', 'Tên', 'SĐT', 'Điểm', 'Vai trò', 'Trạng thái', 'Tạo lúc', 'HĐ gần nhất', 'Địa chỉ', 'Link CK', 'Phiên', 'Tiến độ', 'Email'];
 var A_HEAD = ['Thời gian', 'Mã', 'Tên', 'Sự kiện', 'Chi tiết'];
 var ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 
@@ -40,6 +40,7 @@ function doPost(e) {
       case 'saveProgress': out = apiSaveProgress(d); break;
       case 'loadProgress': out = apiLoadProgress(d); break;
       case 'ping':         out = apiPing(d); break;
+      case 'guest':        out = apiGuest(d); break;
       case 'event':        out = apiEvent(d); break;
       case 'leaderboard':  out = apiLeaderboard(d); break;
       case 'lead':         out = apiLead(d); break;
@@ -100,6 +101,36 @@ function apiPing(d) {
   if (m.status === 'blocked') return { ok: false, error: 'blocked' };
   if (!validSession(m, d.session)) return { ok: false, error: 'session' };
   return { ok: true };
+}
+/* ===== Khách dùng thử: tạo/lấy tài khoản theo EMAIL (để admin tracking) ===== */
+function apiGuest(d) {
+  var email = String(d.email || '').trim().toLowerCase();
+  if (!email || email.indexOf('@') < 1) return { ok: false, error: 'Email không hợp lệ' };
+  var name = String(d.name || '').trim() || email.split('@')[0];
+  var session = Utilities.getUuid();
+  var lock = LockService.getScriptLock(); try { lock.waitLock(8000); } catch (e) {}
+  var m, created = false;
+  try {
+    m = findByEmail(email);
+    if (!m) {
+      var code; do { code = genCode(); } while (findByCode(code));
+      sh(MEMBERS).appendRow([code, name, '', 0, 'guest', 'active', now(), now(), '', '', session, '', email]);
+      m = { code: code, name: name }; created = true;
+      logAct(code, name, 'guest-join', email);
+    } else {
+      if (m.status === 'blocked') { try { lock.releaseLock(); } catch (e) {} return { ok: false, error: 'Tài khoản đã bị khoá.' }; }
+      sh(MEMBERS).getRange(m.row, 11).setValue(session);
+      sh(MEMBERS).getRange(m.row, 8).setValue(now());
+      if (m.name !== name && name) sh(MEMBERS).getRange(m.row, 2).setValue(name);
+      logAct(m.code, name || m.name, 'login', email);
+    }
+  } finally { try { lock.releaseLock(); } catch (e) {} }
+  return { ok: true, role: 'guest', code: m.code, name: name || m.name, session: session, progress: loadProgress(m.code) };
+}
+function findByEmail(email) {
+  email = String(email || '').trim().toLowerCase(); if (!email) return null;
+  var a = members(); for (var i = 0; i < a.length; i++) if (String(a[i].email || '').trim().toLowerCase() === email) return a[i];
+  return null;
 }
 function apiAI(d) {
   if (!authorized(d.code)) return { ok: false, error: 'unauthorized' };
@@ -189,7 +220,10 @@ function apiCreateCode(d) {
 function apiListMembers(d) {
   if (!isAdmin(d.admin)) return { ok: false, error: 'Chỉ admin' };
   var rows = members(); rows.sort(function (a, b) { return b.points - a.points; });
-  return { ok: true, members: rows.map(function (r) { return { code: r.code, name: r.name, phone: r.phone, points: r.points, status: r.status, created: r.created, last: r.last }; }) };
+  return { ok: true, members: rows.map(function (r) {
+    var done = 0; try { var pg = JSON.parse(r.data); if (pg && pg.done) done = pg.done.length; } catch (e) {}
+    return { code: r.code, name: r.name, phone: r.phone, email: r.email, role: r.role, points: r.points, done: done, status: r.status, created: r.created, last: r.last };
+  }) };
 }
 function apiSetStatus(d) {
   if (!isAdmin(d.admin)) return { ok: false, error: 'Chỉ admin' };
@@ -241,9 +275,9 @@ function sh(name) {
 }
 function members() {
   var t = sh(MEMBERS), last = t.getLastRow(); if (last < 2) return [];
-  var v = t.getRange(2, 1, last - 1, 12).getValues(), out = [];
+  var v = t.getRange(2, 1, last - 1, 13).getValues(), out = [];
   for (var i = 0; i < v.length; i++) { if (!v[i][0]) continue;
-    out.push({ row: i + 2, code: norm(v[i][0]), name: v[i][1], phone: String(v[i][2] || '').replace(/^'/, ''), points: Math.floor(Number(v[i][3]) || 0), role: v[i][4], status: v[i][5] || 'active', created: v[i][6], last: v[i][7], session: v[i][10], data: v[i][11] }); }
+    out.push({ row: i + 2, code: norm(v[i][0]), name: v[i][1], phone: String(v[i][2] || '').replace(/^'/, ''), points: Math.floor(Number(v[i][3]) || 0), role: v[i][4], status: v[i][5] || 'active', created: v[i][6], last: v[i][7], session: v[i][10], data: v[i][11], email: v[i][12] }); }
   return out;
 }
 function findByCode(c) { c = norm(c); if (!c) return null; var a = members(); for (var i = 0; i < a.length; i++) if (a[i].code === c) return a[i]; return null; }
